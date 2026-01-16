@@ -25,6 +25,7 @@ const createMocks = () => {
 
   mockUseBookmarks.mockReturnValue({
     addBookmark,
+    updateBookmark: jest.fn(),
     isLoading: false,
     errorMessage: null,
     clearError: jest.fn(),

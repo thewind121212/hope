@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { CreateBookmarkSchema, type CreateBookmarkInput } from "@/lib/validation";
-import { BookmarkColor } from "@/lib/types";
+import { Bookmark, BookmarkColor } from "@/lib/types";
 import { useBookmarks } from "@/hooks/useBookmarks";
 
 export interface BookmarkFormState {
@@ -19,35 +19,51 @@ export interface BookmarkFormErrors {
   color?: string;
 }
 
-const initialState: BookmarkFormState = {
-  title: "",
-  url: "",
-  description: "",
-  tags: "",
-  color: "",
-};
+type BookmarkFormMode = "create" | "edit";
+
+const buildInitialState = (
+  bookmark?: Bookmark | null
+): BookmarkFormState => ({
+  title: bookmark?.title ?? "",
+  url: bookmark?.url ?? "",
+  description: bookmark?.description ?? "",
+  tags: bookmark?.tags?.join(", ") ?? "",
+  color: bookmark?.color ?? "",
+});
 
 export function useBookmarkForm(options?: {
-  onBookmarkAdded?: (bookmark: CreateBookmarkInput) => void;
+  mode?: BookmarkFormMode;
+  initialBookmark?: Bookmark | null;
+  onSuccess?: (bookmark: CreateBookmarkInput) => void;
 }) {
-  const { addBookmark, isLoading, errorMessage, clearError } = useBookmarks();
-  const [form, setForm] = useState<BookmarkFormState>(initialState);
+  const { addBookmark, updateBookmark, isLoading, errorMessage, clearError } =
+    useBookmarks();
+  const [form, setForm] = useState<BookmarkFormState>(() =>
+    buildInitialState(options?.initialBookmark)
+  );
   const [errors, setErrors] = useState<BookmarkFormErrors>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const successTimeoutRef = useRef<number | null>(null);
 
+  const resetForm = useCallback(
+    (bookmark?: Bookmark | null) => {
+      setForm(buildInitialState(bookmark ?? options?.initialBookmark));
+      setErrors({});
+      setShowSuccess(false);
+      if (errorMessage) {
+        clearError();
+      }
+      if (successTimeoutRef.current) {
+        window.clearTimeout(successTimeoutRef.current);
+        successTimeoutRef.current = null;
+      }
+    },
+    [clearError, errorMessage, options?.initialBookmark]
+  );
+
   const clearForm = useCallback(() => {
-    setForm(initialState);
-    setErrors({});
-    setShowSuccess(false);
-    if (errorMessage) {
-      clearError();
-    }
-    if (successTimeoutRef.current) {
-      window.clearTimeout(successTimeoutRef.current);
-      successTimeoutRef.current = null;
-    }
-  }, [clearError, errorMessage]);
+    resetForm();
+  }, [resetForm]);
 
   const handleChange = (
     event: React.ChangeEvent<
@@ -99,15 +115,24 @@ export function useBookmarkForm(options?: {
       return;
     }
 
-    const addResult = addBookmark(result.data);
-    if (!addResult.success) {
-      return;
+    if (options?.mode === "edit" && options.initialBookmark) {
+      const updateResult = updateBookmark({
+        ...options.initialBookmark,
+        ...result.data,
+      });
+      if (!updateResult.success) {
+        return;
+      }
+    } else {
+      const addResult = addBookmark(result.data);
+      if (!addResult.success) {
+        return;
+      }
     }
 
-    options?.onBookmarkAdded?.(result.data);
+    options?.onSuccess?.(result.data);
 
-    setForm(initialState);
-    setErrors({});
+    resetForm();
     setShowSuccess(true);
 
     if (successTimeoutRef.current) {
@@ -127,6 +152,7 @@ export function useBookmarkForm(options?: {
     showSuccess,
     errorMessage,
     clearForm,
+    resetForm,
     handleChange,
     handleSubmit,
   };

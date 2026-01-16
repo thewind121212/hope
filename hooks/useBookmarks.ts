@@ -13,15 +13,19 @@ import {
   getBookmarks,
   deleteBookmark as deleteFromStorage,
   addBookmark as addToStorage,
+  updateBookmark as updateInStorage,
   setBookmarks,
 } from "@/lib/storage";
 import { Bookmark } from "@/lib/types";
+import { toast } from "sonner";
 
 type AddBookmarkResult =
   | { success: true; bookmark: Bookmark }
   | { success: false; error: string };
 
 type DeleteBookmarkResult = { success: true } | { success: false; error: string };
+
+type UpdateBookmarkResult = { success: true } | { success: false; error: string };
 
 type ImportResult = { success: true } | { success: false; error: string };
 
@@ -32,6 +36,8 @@ type Action =
   | { type: "DELETE_BOOKMARK"; id: string }
   | { type: "DELETE_BOOKMARK_SUCCESS"; id: string }
   | { type: "DELETE_BOOKMARK_ERROR"; id: string; error: string }
+  | { type: "UPDATE_BOOKMARK_SUCCESS"; bookmark: Bookmark }
+  | { type: "UPDATE_BOOKMARK_ERROR"; error: string }
   | { type: "IMPORT_BOOKMARKS_SUCCESS"; bookmarks: Bookmark[] }
   | { type: "IMPORT_BOOKMARKS_ERROR"; error: string }
   | { type: "CLEAR_ERROR" };
@@ -49,18 +55,19 @@ interface BookmarksContextValue {
   setSimulateError: (value: boolean) => void;
   addBookmark: (bookmark: Omit<Bookmark, "id" | "createdAt">) => AddBookmarkResult;
   deleteBookmark: (id: string) => DeleteBookmarkResult;
+  updateBookmark: (bookmark: Bookmark) => UpdateBookmarkResult;
   importBookmarks: (bookmarks: Bookmark[]) => Promise<ImportResult>;
   clearError: () => void;
 }
 
 const BookmarksContext = createContext<BookmarksContextValue | null>(null);
 
-const initialState = (): BookmarksState => ({
-  bookmarks: getBookmarks(),
+const initialState: BookmarksState = {
+  bookmarks: [],
   pendingAdds: new Set(),
   pendingDeletes: new Set(),
   error: null,
-});
+};
 
 const addToSet = (set: Set<string>, value: string) => {
   const next = new Set(set);
@@ -90,6 +97,11 @@ const replaceBookmark = (
 
   return replaced ? updated : [...updated, nextBookmark];
 };
+
+const updateBookmarkInState = (bookmarks: Bookmark[], updated: Bookmark) =>
+  bookmarks.map((bookmark) =>
+    bookmark.id === updated.id ? updated : bookmark
+  );
 
 function reducer(state: BookmarksState, action: Action): BookmarksState {
   switch (action.type) {
@@ -141,6 +153,17 @@ function reducer(state: BookmarksState, action: Action): BookmarksState {
         pendingDeletes: removeFromSet(state.pendingDeletes, action.id),
         error: action.error,
       };
+    case "UPDATE_BOOKMARK_SUCCESS":
+      return {
+        ...state,
+        bookmarks: updateBookmarkInState(state.bookmarks, action.bookmark),
+        error: null,
+      };
+    case "UPDATE_BOOKMARK_ERROR":
+      return {
+        ...state,
+        error: action.error,
+      };
     case "IMPORT_BOOKMARKS_SUCCESS":
       return {
         ...state,
@@ -177,8 +200,18 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export function BookmarksProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
   const [simulateError, setSimulateError] = useState(false);
+
+  useEffect(() => {
+    const storedBookmarks = getBookmarks();
+    if (storedBookmarks.length > 0) {
+      dispatch({
+        type: "IMPORT_BOOKMARKS_SUCCESS",
+        bookmarks: storedBookmarks,
+      });
+    }
+  }, []);
 
   const clearError = useCallback(() => {
     dispatch({ type: "CLEAR_ERROR" });
@@ -197,12 +230,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
       setTimeout(() => {
         if (simulateError) {
+          const errorMessage =
+            "Unable to save bookmark. Please check your browser storage settings.";
           dispatch({
             type: "ADD_BOOKMARK_ERROR",
             tempId,
-            error:
-              "Unable to save bookmark. Please check your browser storage settings.",
+            error: errorMessage,
           });
+          toast.error(errorMessage);
           return;
         }
 
@@ -212,12 +247,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         );
 
         if (!stored) {
+          const errorMessage =
+            "Unable to save bookmark. Please check your browser storage settings.";
           dispatch({
             type: "ADD_BOOKMARK_ERROR",
             tempId,
-            error:
-              "Unable to save bookmark. Please check your browser storage settings.",
+            error: errorMessage,
           });
+          toast.error(errorMessage);
           return;
         }
 
@@ -226,6 +263,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           tempId,
           bookmark: savedBookmark,
         });
+        toast.success("Bookmark added");
       }, 0);
 
       return { success: true, bookmark: optimisticBookmark };
@@ -239,12 +277,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
       setTimeout(() => {
         if (simulateError) {
+          const errorMessage =
+            "Unable to delete bookmark. Please check your browser storage settings.";
           dispatch({
             type: "DELETE_BOOKMARK_ERROR",
             id,
-            error:
-              "Unable to delete bookmark. Please check your browser storage settings.",
+            error: errorMessage,
           });
+          toast.error(errorMessage);
           return;
         }
 
@@ -252,16 +292,50 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         const stillExists = getBookmarks().some((bookmark) => bookmark.id === id);
 
         if (stillExists) {
+          const errorMessage =
+            "Unable to delete bookmark. Please check your browser storage settings.";
           dispatch({
             type: "DELETE_BOOKMARK_ERROR",
             id,
-            error:
-              "Unable to delete bookmark. Please check your browser storage settings.",
+            error: errorMessage,
           });
+          toast.error(errorMessage);
           return;
         }
 
         dispatch({ type: "DELETE_BOOKMARK_SUCCESS", id });
+        toast.success("Bookmark deleted");
+      }, 0);
+
+      return { success: true };
+    },
+    [simulateError]
+  );
+
+  const updateBookmark = useCallback(
+    (bookmark: Bookmark): UpdateBookmarkResult => {
+      setTimeout(() => {
+        if (simulateError) {
+          const errorMessage =
+            "Unable to update bookmark. Please check your browser storage settings.";
+          dispatch({ type: "UPDATE_BOOKMARK_ERROR", error: errorMessage });
+          toast.error(errorMessage);
+          return;
+        }
+
+        const updated = updateInStorage(bookmark);
+        const stored = getBookmarks().some((item) => item.id === bookmark.id);
+
+        if (!updated || !stored) {
+          const errorMessage =
+            "Unable to update bookmark. Please check your browser storage settings.";
+          dispatch({ type: "UPDATE_BOOKMARK_ERROR", error: errorMessage });
+          toast.error(errorMessage);
+          return;
+        }
+
+        dispatch({ type: "UPDATE_BOOKMARK_SUCCESS", bookmark: updated });
+        toast.success("Bookmark updated");
       }, 0);
 
       return { success: true };
@@ -304,15 +378,16 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       setSimulateError,
       addBookmark,
       deleteBookmark,
+      updateBookmark,
       importBookmarks,
       clearError,
     }),
     [
       state,
       simulateError,
-      setSimulateError,
       addBookmark,
       deleteBookmark,
+      updateBookmark,
       importBookmarks,
       clearError,
     ]
@@ -354,6 +429,7 @@ export function useBookmarks(searchTerm: string = "") {
     clearError: context.clearError,
     addBookmark: context.addBookmark,
     deleteBookmark: context.deleteBookmark,
+    updateBookmark: context.updateBookmark,
     importBookmarks: context.importBookmarks,
   };
 }

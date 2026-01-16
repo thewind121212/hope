@@ -33,6 +33,7 @@ const createReturn = (filtered: typeof bookmarks) => ({
   bookmarks: filtered,
   allBookmarks: bookmarks,
   deleteBookmark: jest.fn(),
+  updateBookmark: jest.fn(),
   errorMessage: null,
   clearError: jest.fn(),
   pendingAdds: new Set<string>(),
@@ -50,6 +51,10 @@ const Harness = () => {
     <BookmarkList
       searchQuery={searchQuery}
       onSearchChange={setSearchQuery}
+      selectedTag="all"
+      onTagChange={jest.fn()}
+      sortKey="newest"
+      onSortChange={jest.fn()}
       searchInputRef={searchInputRef}
       cardsContainerRef={cardsContainerRef}
     />
@@ -66,6 +71,7 @@ describe("BookmarkList", () => {
       bookmarks: [],
       allBookmarks: [],
       deleteBookmark: jest.fn(),
+      updateBookmark: jest.fn(),
       errorMessage: null,
       clearError: jest.fn(),
       pendingAdds: new Set<string>(),
@@ -78,12 +84,16 @@ describe("BookmarkList", () => {
       <BookmarkList
         searchQuery={""}
         onSearchChange={jest.fn()}
+        selectedTag="all"
+        onTagChange={jest.fn()}
+        sortKey="newest"
+        onSortChange={jest.fn()}
         searchInputRef={createRef<HTMLInputElement | null>()}
         cardsContainerRef={createRef<HTMLDivElement | null>()}
       />
     );
 
-    expect(screen.getByText("No bookmarks yet.")).toBeInTheDocument();
+    expect(screen.getByText("No bookmarks yet")).toBeInTheDocument();
   });
 
   it("renders correct number of bookmark cards", () => {
@@ -93,6 +103,10 @@ describe("BookmarkList", () => {
       <BookmarkList
         searchQuery={""}
         onSearchChange={jest.fn()}
+        selectedTag="all"
+        onTagChange={jest.fn()}
+        sortKey="newest"
+        onSortChange={jest.fn()}
         searchInputRef={createRef<HTMLInputElement | null>()}
         cardsContainerRef={createRef<HTMLDivElement | null>()}
       />
@@ -104,8 +118,8 @@ describe("BookmarkList", () => {
   });
 
   it("filters displayed bookmarks via search input", async () => {
-    mockUseBookmarks.mockImplementation((searchTerm: string) => {
-      const query = searchTerm.toLowerCase();
+    mockUseBookmarks.mockImplementation((searchTerm?: string) => {
+      const query = (searchTerm ?? "").toLowerCase();
       const filtered = bookmarks.filter((bookmark) =>
         [bookmark.title, bookmark.url, bookmark.description ?? ""]
           .join(" ")
@@ -122,7 +136,7 @@ describe("BookmarkList", () => {
       2
     );
 
-    await user.type(screen.getByPlaceholderText("Search bookmarks..."), "Next");
+    await user.type(screen.getByPlaceholderText("Search by title, URL, tags"), "Next");
 
     expect(container.querySelectorAll("[data-bookmark-card='true']")).toHaveLength(
       1

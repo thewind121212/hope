@@ -18,6 +18,7 @@ describe("BookmarkCard", () => {
       <BookmarkCard
         bookmark={bookmark}
         onDelete={jest.fn()}
+        onEdit={jest.fn()}
         isPendingAdd={false}
         isPendingDelete={false}
       />
@@ -38,14 +39,15 @@ describe("BookmarkCard", () => {
       <BookmarkCard
         bookmark={bookmark}
         onDelete={onDelete}
+        onEdit={jest.fn()}
         isPendingAdd={false}
         isPendingDelete={false}
       />
     );
 
-    await user.click(screen.getByRole("button", { name: "Delete bookmark" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
 
-    expect(onDelete).toHaveBeenCalledWith(bookmark.id, bookmark.title);
+    expect(onDelete).toHaveBeenCalledWith(bookmark);
   });
 
   it("renders link with correct href and target", () => {
@@ -53,6 +55,7 @@ describe("BookmarkCard", () => {
       <BookmarkCard
         bookmark={bookmark}
         onDelete={jest.fn()}
+        onEdit={jest.fn()}
         isPendingAdd={false}
         isPendingDelete={false}
       />

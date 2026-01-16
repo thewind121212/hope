@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import BookmarkFormFields from "@/components/BookmarkFormFields";
+import Button from "@/components/ui/Button";
+import Card from "@/components/ui/Card";
 import { useBookmarkForm } from "@/hooks/useBookmarkForm";
 import type { CreateBookmarkInput } from "@/lib/validation";
 
@@ -25,7 +27,7 @@ export default function AddBookmarkForm({
     clearForm,
     handleChange,
     handleSubmit,
-  } = useBookmarkForm({ onBookmarkAdded });
+  } = useBookmarkForm({ onSuccess: onBookmarkAdded });
 
   useEffect(() => {
     clearFormRef.current = clearForm;
@@ -35,36 +37,29 @@ export default function AddBookmarkForm({
   }, [clearForm, clearFormRef]);
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white rounded-lg shadow-md p-6 space-y-4"
-    >
-      <h2 className="text-lg font-semibold text-gray-900">Add Bookmark</h2>
+    <Card>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Add Bookmark
+        </h2>
 
-      <BookmarkFormFields
-        form={form}
-        errors={errors}
-        onChange={handleChange}
-        titleInputRef={titleInputRef}
-      />
+        <BookmarkFormFields
+          form={form}
+          errors={errors}
+          onChange={handleChange}
+          titleInputRef={titleInputRef}
+        />
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? "Saving..." : "Add Bookmark"}
-      </button>
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? "Saving..." : "Add Bookmark"}
+        </Button>
 
-      {errorMessage && (
-        <p className="text-sm text-red-600 text-center">{errorMessage}</p>
-      )}
+        {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
 
-      {showSuccess && (
-        <p className="text-sm text-green-600 text-center">
-          Bookmark added successfully!
-        </p>
-      )}
-    </form>
+        {showSuccess && (
+          <p className="text-sm text-emerald-600">Bookmark added successfully!</p>
+        )}
+      </form>
+    </Card>
   );
 }

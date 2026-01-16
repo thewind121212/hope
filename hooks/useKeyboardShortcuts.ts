@@ -8,6 +8,7 @@ interface KeyboardShortcutOptions {
   cardsContainerRef: React.RefObject<HTMLDivElement | null>;
   onClearForm: () => void;
   onClearSearch: () => void;
+  onOpenForm?: () => void;
 }
 
 const getColumnsCount = (container: HTMLElement) => {
@@ -31,6 +32,7 @@ export function useKeyboardShortcuts({
   cardsContainerRef,
   onClearForm,
   onClearSearch,
+  onOpenForm,
 }: KeyboardShortcutOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -39,8 +41,11 @@ export function useKeyboardShortcuts({
 
       if (isModifier && key === "n") {
         event.preventDefault();
-        titleInputRef.current?.focus();
-        titleInputRef.current?.select();
+        onOpenForm?.();
+        window.setTimeout(() => {
+          titleInputRef.current?.focus();
+          titleInputRef.current?.select();
+        }, 0);
         return;
       }
 
@@ -77,6 +82,12 @@ export function useKeyboardShortcuts({
         return;
       }
 
+      const focusableSelector =
+        "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])";
+      const getFocusTarget = (card: HTMLElement) =>
+        card.matches(focusableSelector)
+          ? card
+          : card.querySelector<HTMLElement>(focusableSelector);
       const cards = Array.from(
         cardsContainer.querySelectorAll<HTMLElement>("[data-bookmark-card=\"true\"]")
       );
@@ -121,7 +132,8 @@ export function useKeyboardShortcuts({
       if (nextIndex !== currentIndex) {
         event.preventDefault();
         const nextCard = cards[nextIndex];
-        nextCard?.focus();
+        const focusTarget = nextCard ? getFocusTarget(nextCard) : null;
+        focusTarget?.focus();
         if (typeof nextCard?.scrollIntoView === "function") {
           nextCard.scrollIntoView({ block: "nearest" });
         }
@@ -134,6 +146,7 @@ export function useKeyboardShortcuts({
     cardsContainerRef,
     onClearForm,
     onClearSearch,
+    onOpenForm,
     searchInputRef,
     titleInputRef,
   ]);

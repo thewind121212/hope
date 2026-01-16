@@ -1,4 +1,6 @@
 import type { Ref } from "react";
+import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
 
 interface BookmarkFormFieldProps {
   id: string;
@@ -31,41 +33,34 @@ export default function BookmarkFormField({
   rows = 3,
   inputRef,
 }: BookmarkFormFieldProps) {
-  const baseClasses =
-    "w-full px-3 py-2 border rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500";
-  const borderClass = error ? "border-red-500" : "border-gray-300";
+  if (as === "textarea") {
+    return (
+      <Textarea
+        id={id}
+        name={name}
+        label={label}
+        error={error}
+        value={value}
+        onChange={onChange}
+        rows={rows}
+        placeholder={placeholder}
+        ref={inputRef as Ref<HTMLTextAreaElement>}
+      />
+    );
+  }
 
   return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-        {required ? " *" : ""}
-      </label>
-      {as === "textarea" ? (
-        <textarea
-          ref={inputRef as Ref<HTMLTextAreaElement>}
-          id={id}
-          name={name}
-          value={value}
-          onChange={onChange}
-          rows={rows}
-          className={`${baseClasses} ${borderClass}`}
-          placeholder={placeholder}
-        />
-      ) : (
-        <input
-          ref={inputRef as Ref<HTMLInputElement>}
-          id={id}
-          name={name}
-          value={value}
-          onChange={onChange}
-          type={type}
-          required={required}
-          className={`${baseClasses} ${borderClass}`}
-          placeholder={placeholder}
-        />
-      )}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-    </div>
+    <Input
+      id={id}
+      name={name}
+      label={label}
+      error={error}
+      value={value}
+      onChange={onChange}
+      type={type}
+      required={required}
+      placeholder={placeholder}
+      ref={inputRef as Ref<HTMLInputElement>}
+    />
   );
 }

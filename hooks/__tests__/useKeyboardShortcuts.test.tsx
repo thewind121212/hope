@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { render, fireEvent } from "@testing-library/react";
+import { render, fireEvent, waitFor } from "@testing-library/react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 const ShortcutHarness = () => {
@@ -35,10 +35,14 @@ const ShortcutHarness = () => {
         ref={cardsContainerRef}
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}
       >
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} tabIndex={0} data-bookmark-card="true">
-            Card {index}
-          </div>
+        {["One", "Two", "Three", "Four"].map((label) => (
+          <button
+            key={label}
+            type="button"
+            data-bookmark-card="true"
+          >
+            Card {label}
+          </button>
         ))}
       </div>
     </div>
@@ -46,13 +50,13 @@ const ShortcutHarness = () => {
 };
 
 describe("useKeyboardShortcuts", () => {
-  it("focuses the title input on Ctrl+N", () => {
+  it("focuses the title input on Ctrl+N", async () => {
     const { getByLabelText } = render(<ShortcutHarness />);
     const titleInput = getByLabelText("Title");
 
     fireEvent.keyDown(window, { key: "n", ctrlKey: true });
 
-    expect(titleInput).toHaveFocus();
+    await waitFor(() => expect(titleInput).toHaveFocus());
   });
 
   it("focuses the search input on Cmd+F", () => {

@@ -2,18 +2,55 @@ import { v4 as uuidv4 } from 'uuid';
 import { Bookmark } from './types';
 
 const STORAGE_KEY = 'bookmark-vault-bookmarks';
+const STORAGE_VERSION = 1;
 
-export function getBookmarks(): Bookmark[] {
-  if (typeof window === 'undefined') {
-    return [];
-  }
+type StoredBookmarks = {
+  version: number;
+  data: Bookmark[];
+};
 
+const parseBookmarks = (raw: string | null): Bookmark[] => {
+  if (!raw) return [];
   try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed as Bookmark[];
+    }
+    if (parsed && typeof parsed === 'object' && 'data' in parsed) {
+      const data = (parsed as StoredBookmarks).data;
+      return Array.isArray(data) ? data : [];
+    }
   } catch {
     return [];
   }
+  return [];
+};
+
+const loadBookmarks = (): Bookmark[] => {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+  return parseBookmarks(localStorage.getItem(STORAGE_KEY));
+};
+
+const saveBookmarks = (bookmarks: Bookmark[]): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  try {
+    const payload: StoredBookmarks = {
+      version: STORAGE_VERSION,
+      data: bookmarks,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export function getBookmarks(): Bookmark[] {
+  return loadBookmarks();
 }
 
 export function addBookmark(
@@ -25,38 +62,28 @@ export function addBookmark(
     createdAt: new Date().toISOString(),
   };
 
-  try {
-    const bookmarks = getBookmarks();
-    bookmarks.push(newBookmark);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
-  } catch {
-    // Silently fail if localStorage is not available
-  }
+  const bookmarks = loadBookmarks();
+  saveBookmarks([...bookmarks, newBookmark]);
 
   return newBookmark;
 }
 
 export function deleteBookmark(id: string): void {
-  try {
-    const bookmarks = getBookmarks();
-    const filtered = bookmarks.filter((b) => b.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-  } catch {
-    // Silently fail if localStorage is not available
-  }
+  const bookmarks = loadBookmarks();
+  const filtered = bookmarks.filter((b) => b.id !== id);
+  saveBookmarks(filtered);
+}
+
+export function updateBookmark(bookmark: Bookmark): Bookmark | null {
+  const bookmarks = loadBookmarks();
+  const updated = bookmarks.map((item) =>
+    item.id === bookmark.id ? bookmark : item
+  );
+  return saveBookmarks(updated) ? bookmark : null;
 }
 
 export function setBookmarks(bookmarks: Bookmark[]): boolean {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
-    return true;
-  } catch {
-    return false;
-  }
+  return saveBookmarks(bookmarks);
 }
 
 export function searchBookmarks(query: string): Bookmark[] {
