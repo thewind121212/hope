@@ -48,7 +48,7 @@ export default function Home() {
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-slate-500">Your personal vault</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Your personal vault</p>
               <h2 className="text-2xl font-semibold">Manage your bookmarks</h2>
             </div>
             <div className="flex flex-wrap items-center gap-3">

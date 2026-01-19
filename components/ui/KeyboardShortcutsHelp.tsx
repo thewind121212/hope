@@ -112,7 +112,7 @@ export function KeyboardShortcutsHelp({
 
               {/* Footer note */}
               <p className="mt-4 text-[10px] text-slate-500 dark:text-slate-500">
-                Press <kbd className="rounded border border-zinc-300 bg-zinc-50 px-1 py-0.5">Esc</kbd> to close
+                Press <kbd className="rounded border border-zinc-300 bg-zinc-50 px-1 py-0.5 dark:border-slate-700 dark:bg-slate-800">Esc</kbd> to close
               </p>
             </motion.div>
           </>

@@ -61,12 +61,12 @@ export default function Select({
         ))}
       </select>
       {helperText && !error && (
-        <p id={helperId} className="text-xs text-slate-500">
+        <p id={helperId} className="text-xs text-slate-500 dark:text-slate-400">
           {helperText}
         </p>
       )}
       {error && (
-        <p id={errorId} className="text-xs text-red-600">
+        <p id={errorId} className="text-xs text-red-600 dark:text-red-400">
           {error}
         </p>
       )}

@@ -77,7 +77,7 @@ export default function BookmarkCard({
             type="checkbox"
             checked={isSelected}
             onChange={onToggleSelect}
-            className="h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer flex-shrink-0"
+            className="h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer flex-shrink-0 dark:border-slate-600 dark:bg-slate-800"
             onClick={(e) => e.stopPropagation()}
           />
         )}
@@ -166,7 +166,7 @@ export default function BookmarkCard({
       </div>
 
       {/* Status text */}
-      {statusText && <p className="text-xs text-slate-500">{statusText}</p>}
+      {statusText && <p className="text-xs text-slate-500 dark:text-slate-400">{statusText}</p>}
 
       {/* URL */}
       <a
@@ -175,7 +175,7 @@ export default function BookmarkCard({
         rel="noopener noreferrer"
         className={cn(
           "block truncate text-sm",
-          isPending ? "text-slate-400" : "text-rose-600 hover:text-rose-700"
+          isPending ? "text-slate-400 dark:text-slate-500" : "text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300"
         )}
       >
         {bookmark.url}

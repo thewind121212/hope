@@ -86,7 +86,7 @@ export default function FilterChips({
         <button
           key={chip.key}
           onClick={chip.onRemove}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted hover:bg-muted/80 text-sm text-foreground transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-sm text-slate-700 transition-colors dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200"
           role="listitem"
           aria-label={`Remove filter: ${chip.label}`}
         >
