@@ -11,7 +11,7 @@ interface BookmarkToolbarProps {
   tagOptions: string[];
   resultsCount: number;
   totalCount: number;
-  searchInputRef?: React.RefObject<HTMLInputElement | null>;
+  searchInputRef?: React.MutableRefObject<HTMLInputElement | null | undefined>;
 }
 
 function BookmarkToolbar({

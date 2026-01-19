@@ -11,7 +11,7 @@ import { useBookmarks } from "@/hooks/useBookmarks";
 import { useUiStore } from "@/stores/useUiStore";
 
 interface BookmarkListProps {
-  cardsContainerRef: React.RefObject<HTMLDivElement | null>;
+  cardsContainerRef: React.Ref<HTMLDivElement>;
   onAddBookmark?: () => void;
 }
 

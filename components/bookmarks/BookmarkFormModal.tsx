@@ -11,7 +11,7 @@ import { Bookmark } from "@/lib/types";
 import { useUiStore } from "@/stores/useUiStore";
 
 interface BookmarkFormModalProps {
-  titleInputRef?: React.RefObject<HTMLInputElement | null>;
+  titleInputRef?: React.Ref<HTMLInputElement>;
 }
 
 export default function BookmarkFormModal({

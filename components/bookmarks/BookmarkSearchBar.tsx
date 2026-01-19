@@ -5,7 +5,7 @@ import Input from "@/components/ui/Input";
 interface BookmarkSearchBarProps {
   value: string;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  inputRef?: React.RefObject<HTMLInputElement | null>;
+  inputRef?: React.MutableRefObject<HTMLInputElement | null | undefined>;
 }
 
 export default function BookmarkSearchBar({
@@ -15,7 +15,7 @@ export default function BookmarkSearchBar({
 }: BookmarkSearchBarProps) {
   return (
     <Input
-      ref={inputRef}
+      ref={inputRef as React.LegacyRef<HTMLInputElement>}
       label="Search"
       value={value}
       onChange={onChange}

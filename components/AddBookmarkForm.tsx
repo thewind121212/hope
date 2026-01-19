@@ -11,7 +11,7 @@ import { getSpaces, PERSONAL_SPACE_ID } from "@/lib/spacesStorage";
 import type { CreateBookmarkInput } from "@/lib/validation";
 
 interface AddBookmarkFormProps {
-  titleInputRef: React.RefObject<HTMLInputElement | null>;
+  titleInputRef: React.Ref<HTMLInputElement>;
   clearFormRef: React.MutableRefObject<(() => void) | null>;
   onBookmarkAdded?: (bookmark: CreateBookmarkInput) => void;
 }

@@ -14,7 +14,7 @@ interface BookmarkListViewProps {
   totalCount: number;
   errorMessage: string | null;
   isInitialLoading?: boolean;
-  cardsContainerRef: React.RefObject<HTMLDivElement | null>;
+  cardsContainerRef: React.Ref<HTMLDivElement>;
   cards: React.ReactNode;
   onAddBookmark?: () => void;
 }
@@ -42,7 +42,7 @@ export default function BookmarkListView({
   const clearAllFilters = useUiStore((s) => s.clearAllFilters);
 
   // Local ref for search input
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(undefined);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);

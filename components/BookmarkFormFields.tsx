@@ -15,7 +15,7 @@ interface BookmarkFormFieldsProps {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => void;
-  titleInputRef?: React.RefObject<HTMLInputElement | null>;
+  titleInputRef?: React.Ref<HTMLInputElement>;
   registerField?: (fieldName: keyof BookmarkFormState, element: HTMLInputElement | null) => void;
   spaceOptions: { value: string; label: string }[];
   tagSuggestions: string[];

@@ -17,7 +17,7 @@ interface BookmarkFormFieldProps {
   as?: "input" | "textarea";
   type?: string;
   rows?: number;
-  inputRef?: Ref<HTMLInputElement | HTMLTextAreaElement>;
+  inputRef?: React.Ref<HTMLInputElement>;
   registerField?: (fieldName: keyof BookmarkFormState, element: HTMLInputElement | null) => void;
   containerClassName?: string;
 }
@@ -43,13 +43,9 @@ export default function BookmarkFormField({
     if (registerField && element instanceof HTMLInputElement) {
       registerField(name, element);
     }
-    // Forward the ref if provided
-    if (typeof inputRef === "function") {
-      inputRef(element);
-    } else if (inputRef && "current" in inputRef) {
-      (inputRef as React.MutableRefObject<HTMLInputElement | HTMLTextAreaElement | null>).current = element;
-    }
   };
+
+  const forwardRef = inputRef ? handleRef : undefined;
 
   if (as === "textarea") {
     return (
