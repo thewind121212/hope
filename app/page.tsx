@@ -1,14 +1,17 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import BookmarkFormModal from "@/components/bookmarks/BookmarkFormModal";
 import ImportExportModal from "@/components/bookmarks/ImportExportModal";
 import BookmarkList from "@/components/BookmarkList";
+import { OnboardingPanel } from "@/components/onboarding/OnboardingPanel";
+import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { Button } from "@/components/ui";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { SortKey } from "@/lib/bookmarks";
 import { BookmarksProvider } from "@/hooks/useBookmarks";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { runOnboardingMigration } from "@/lib/migration";
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,6 +23,11 @@ export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
 
+  // Run migration on mount
+  useEffect(() => {
+    runOnboardingMigration();
+  }, []);
+
   useKeyboardShortcuts({
     titleInputRef,
     searchInputRef,
@@ -29,17 +37,22 @@ export default function Home() {
     onOpenForm: () => setIsFormOpen(true),
   });
 
+  const handleAddBookmark = () => setIsFormOpen(true);
+
   return (
     <ErrorBoundary>
       <BookmarksProvider>
         <div className="space-y-10">
+          {/* Onboarding Panel - shows for first-time users */}
+          <OnboardingPanel />
+
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm text-slate-500">Your personal vault</p>
               <h2 className="text-2xl font-semibold">Manage your bookmarks</h2>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <Button onClick={() => setIsFormOpen(true)}>Add bookmark</Button>
+              <Button onClick={handleAddBookmark}>Add bookmark</Button>
               <Button
                 variant="secondary"
                 onClick={() => setIsImportExportOpen(true)}
@@ -47,6 +60,8 @@ export default function Home() {
               >
                 <ImportExportIcon />
               </Button>
+              {/* Keyboard Shortcuts Help */}
+              <KeyboardShortcutsHelp position="bottom" />
             </div>
           </div>
           <BookmarkFormModal
@@ -67,6 +82,7 @@ export default function Home() {
             onSortChange={setSortKey}
             searchInputRef={searchInputRef}
             cardsContainerRef={cardsContainerRef}
+            onAddBookmark={handleAddBookmark}
           />
         </div>
       </BookmarksProvider>

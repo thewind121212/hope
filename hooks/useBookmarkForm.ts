@@ -31,6 +31,9 @@ const buildInitialState = (
   color: bookmark?.color ?? "",
 });
 
+// Order of fields for validation focus
+const fieldOrder: (keyof BookmarkFormState)[] = ["title", "url", "description", "tags", "color"];
+
 export function useBookmarkForm(options?: {
   mode?: BookmarkFormMode;
   initialBookmark?: Bookmark | null;
@@ -44,6 +47,7 @@ export function useBookmarkForm(options?: {
   const [errors, setErrors] = useState<BookmarkFormErrors>({});
   const [showSuccess, setShowSuccess] = useState(false);
   const successTimeoutRef = useRef<number | null>(null);
+  const fieldRefs = useRef<Partial<Record<keyof BookmarkFormState, HTMLInputElement>>>({});
 
   const resetForm = useCallback(
     (bookmark?: Bookmark | null) => {
@@ -83,6 +87,13 @@ export function useBookmarkForm(options?: {
     }
   };
 
+  // Register field ref for focus management
+  const registerField = useCallback((fieldName: keyof BookmarkFormState, element: HTMLInputElement | null) => {
+    if (element) {
+      fieldRefs.current[fieldName] = element;
+    }
+  }, []);
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     setShowSuccess(false);
@@ -107,11 +118,23 @@ export function useBookmarkForm(options?: {
 
     if (!result.success) {
       const fieldErrors: BookmarkFormErrors = {};
+      const firstErrorField: keyof BookmarkFormState | undefined = undefined;
+
       result.error.issues.forEach((issue) => {
         const field = issue.path[0] as keyof BookmarkFormErrors;
         fieldErrors[field] = issue.message;
       });
+
       setErrors(fieldErrors);
+
+      // Focus first invalid field
+      for (const field of fieldOrder) {
+        if (fieldErrors[field] && fieldRefs.current[field]) {
+          fieldRefs.current[field]?.focus();
+          fieldRefs.current[field]?.select();
+          break;
+        }
+      }
       return;
     }
 
@@ -145,15 +168,24 @@ export function useBookmarkForm(options?: {
     }, 2000);
   };
 
+  // Check if form is currently valid (no errors, required fields filled)
+  const isValid = Boolean(
+    form.title.trim() &&
+    form.url.trim() &&
+    Object.keys(errors).length === 0
+  );
+
   return {
     form,
     errors,
     isLoading,
     showSuccess,
     errorMessage,
+    isValid,
     clearForm,
     resetForm,
     handleChange,
     handleSubmit,
+    registerField,
   };
 }

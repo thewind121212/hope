@@ -14,6 +14,7 @@ interface BookmarkListProps {
   onSortChange: (value: SortKey) => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
   cardsContainerRef: React.RefObject<HTMLDivElement | null>;
+  onAddBookmark?: () => void;
 }
 
 export default function BookmarkList({
@@ -25,6 +26,7 @@ export default function BookmarkList({
   onSortChange,
   searchInputRef,
   cardsContainerRef,
+  onAddBookmark,
 }: BookmarkListProps) {
   const {
     errorMessage,
@@ -85,6 +87,7 @@ export default function BookmarkList({
         searchInputRef={searchInputRef}
         cardsContainerRef={cardsContainerRef}
         cards={cards}
+        onAddBookmark={onAddBookmark}
       />
       <BookmarkListDialogs
         editTarget={editTarget}

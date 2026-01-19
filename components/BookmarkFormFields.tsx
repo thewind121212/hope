@@ -15,6 +15,7 @@ interface BookmarkFormFieldsProps {
     >
   ) => void;
   titleInputRef?: React.RefObject<HTMLInputElement | null>;
+  registerField?: (fieldName: keyof BookmarkFormState, element: HTMLInputElement | null) => void;
 }
 
 const colorOptions = BOOKMARK_COLORS.map((color) => ({
@@ -27,6 +28,7 @@ export default function BookmarkFormFields({
   errors,
   onChange,
   titleInputRef,
+  registerField,
 }: BookmarkFormFieldsProps) {
   return (
     <>
@@ -40,6 +42,7 @@ export default function BookmarkFormFields({
         error={errors.title}
         placeholder="Enter bookmark title"
         inputRef={titleInputRef}
+        registerField={registerField}
       />
 
       <BookmarkFormField
@@ -51,6 +54,7 @@ export default function BookmarkFormFields({
         onChange={onChange}
         error={errors.url}
         placeholder="https://example.com"
+        registerField={registerField}
       />
 
       <BookmarkFormField
@@ -62,6 +66,7 @@ export default function BookmarkFormFields({
         onChange={onChange}
         error={errors.description}
         placeholder="Optional description"
+        registerField={registerField}
       />
 
       <BookmarkFormField
@@ -72,6 +77,7 @@ export default function BookmarkFormFields({
         onChange={onChange}
         error={errors.tags}
         placeholder="react, javascript, tutorial (comma-separated)"
+        registerField={registerField}
       />
 
       <BookmarkFormSelect

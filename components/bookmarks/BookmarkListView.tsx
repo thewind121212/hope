@@ -19,6 +19,7 @@ interface BookmarkListViewProps {
   searchInputRef: React.RefObject<HTMLInputElement | null>;
   cardsContainerRef: React.RefObject<HTMLDivElement | null>;
   cards: React.ReactNode;
+  onAddBookmark?: () => void;
 }
 
 export default function BookmarkListView({
@@ -36,6 +37,7 @@ export default function BookmarkListView({
   searchInputRef,
   cardsContainerRef,
   cards,
+  onAddBookmark,
 }: BookmarkListViewProps) {
   const isEmpty = totalCount === 0;
   const isFilteredEmpty = !isEmpty && resultsCount === 0;
@@ -59,7 +61,9 @@ export default function BookmarkListView({
       {isEmpty ? (
         <EmptyState
           title="No bookmarks yet"
-          description="Add your first bookmark to get started."
+          description="Add your first bookmark to get started. You can organize them with tags and colors."
+          actionLabel="Add your first bookmark"
+          onAction={onAddBookmark}
         />
       ) : isFilteredEmpty ? (
         <EmptyState
