@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BOOKMARK_COLORS } from './types';
+import { BOOKMARK_COLORS } from '@voc/lib/types';
 
 /**
  * Custom URL validation with helpful error messages

@@ -4,7 +4,7 @@ import {
   markOnboardingSeen,
   clearOnboardingFlag,
   isFirstLaunch,
-} from '../onboarding';
+} from '@voc/lib/onboarding';
 
 // Mock localStorage
 const localStorageMock = (() => {

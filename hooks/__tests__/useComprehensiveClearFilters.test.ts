@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useComprehensiveClearFilters } from '../useComprehensiveClearFilters';
+import { useComprehensiveClearFilters } from '@voc/hooks/useComprehensiveClearFilters';
 
 describe('useComprehensiveClearFilters', () => {
   it('should call all callbacks when clearAllFilters is called', () => {

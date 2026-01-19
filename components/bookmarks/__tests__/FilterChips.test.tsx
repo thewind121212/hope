@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import FilterChips from '../FilterChips';
+import FilterChips from '@voc/components/bookmarks/FilterChips';
 
 describe('FilterChips', () => {
   const mockProps = {

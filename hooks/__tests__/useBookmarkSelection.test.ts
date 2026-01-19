@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useBookmarkSelection } from '../useBookmarkSelection';
+import { useBookmarkSelection } from '@voc/hooks/useBookmarkSelection';
 
 describe('useBookmarkSelection', () => {
   it('should start with empty selection', () => {

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import MarqueeText from '../MarqueeText';
+import MarqueeText from '@voc/components/ui/MarqueeText';
 
 describe('MarqueeText', () => {
   it('should render children correctly', () => {

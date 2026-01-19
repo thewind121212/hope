@@ -3,7 +3,7 @@ import {
   runOnboardingMigration,
   runOnboardingMigrationWithResult,
   type MigrationResult,
-} from '../migration';
+} from '@voc/lib/migration';
 
 // Mock localStorage
 const localStorageMock = (() => {

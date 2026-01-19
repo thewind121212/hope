@@ -1,4 +1,4 @@
-import type { Bookmark } from './types';
+import type { Bookmark } from '@voc/lib/types';
 
 /**
  * Demo bookmarks for first-time users

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { demoBookmarks, getDemoBookmarksWithIds } from '../demoBookmarks';
-import type { Bookmark } from '../types';
+import { demoBookmarks, getDemoBookmarksWithIds } from '@voc/lib/demoBookmarks';
+import type { Bookmark } from '@voc/lib/types';
 
 describe('demoBookmarks', () => {
   describe('demoBookmarks array', () => {

@@ -3,7 +3,7 @@ import {
   deleteBookmark,
   getBookmarks,
   searchBookmarks,
-} from '../storage';
+} from '@voc/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 jest.mock('uuid', () => ({

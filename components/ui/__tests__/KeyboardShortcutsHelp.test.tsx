@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { KeyboardShortcutsHelp } from '../KeyboardShortcutsHelp';
+import { KeyboardShortcutsHelp } from '@voc/components/ui/KeyboardShortcutsHelp';
 
 describe('KeyboardShortcutsHelp', () => {
   it('renders trigger button', () => {

@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import BulkActionsBar from '../BulkActionsBar';
+import BulkActionsBar from '@voc/components/bookmarks/BulkActionsBar';
 
 describe('BulkActionsBar', () => {
   const mockProps = {

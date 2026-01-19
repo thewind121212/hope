@@ -1,5 +1,5 @@
-import { getBookmarks } from './storage';
-import { hasSeenOnboarding, markOnboardingSeen } from './onboarding';
+import { getBookmarks } from '@voc/lib/storage';
+import { hasSeenOnboarding, markOnboardingSeen } from '@voc/lib/onboarding';
 
 /**
  * Run onboarding migration logic

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Bookmark } from './types';
+import { Bookmark } from '@voc/lib/types';
 
 const STORAGE_KEY = 'bookmark-vault-bookmarks';
 const STORAGE_VERSION = 1;

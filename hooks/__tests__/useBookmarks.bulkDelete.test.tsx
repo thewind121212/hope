@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { useBookmarks, BookmarksProvider } from '../useBookmarks';
+import { useBookmarks, BookmarksProvider } from '@voc/hooks/useBookmarks';
 
 // Mock storage module completely to avoid uuid issues
 jest.mock('@/lib/storage', () => ({

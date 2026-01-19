@@ -52,8 +52,9 @@ export default function DropdownMenu({
         onClick: (e: React.MouseEvent) => {
           setIsOpen(!isOpen);
           // Also call the original onClick if it exists
-          if (trigger.props.onClick) {
-            trigger.props.onClick(e);
+          const originalOnClick = (trigger as React.ReactElement<any>).props.onClick;
+          if (originalOnClick) {
+            originalOnClick(e);
           }
         },
         "aria-expanded": isOpen,
