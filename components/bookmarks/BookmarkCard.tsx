@@ -2,6 +2,7 @@
 import Card from "@/components/ui/Card";
 import BookmarkTags from "@/components/bookmarks/BookmarkTags";
 import DropdownMenu, { DropdownMenuItem } from "@/components/ui/DropdownMenu";
+import MarqueeText from "@/components/ui/MarqueeText";
 import { cn } from "@/lib/utils";
 import { Bookmark, BookmarkColor } from "@/lib/types";
 import { toast } from "sonner";
@@ -68,41 +69,40 @@ export default function BookmarkCard({
       )}
       onClick={handleCardClick}
     >
-      {/* Checkbox for selection */}
-      {onToggleSelect && (
-        <div className="absolute top-3 left-3 z-10">
+      {/* Header row: checkbox - title - 3-dot menu */}
+      <div className="flex items-center gap-3">
+        {/* Checkbox */}
+        {onToggleSelect && (
           <input
             type="checkbox"
             checked={isSelected}
             onChange={onToggleSelect}
-            className="h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer"
+            className="h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer flex-shrink-0"
             onClick={(e) => e.stopPropagation()}
           />
-        </div>
-      )}
+        )}
 
-      <div className="flex items-start justify-between gap-3 pl-7">
-        <div className="flex-1 min-w-0 space-y-1">
-          <div className="flex items-center gap-2">
-            {bookmark.color && (
-              <span
-                className={cn(
-                  "h-2.5 w-2.5 rounded-full flex-shrink-0",
-                  colorClasses[bookmark.color]
-                )}
-                aria-hidden="true"
-              />
-            )}
+        {/* Title with color dot */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {bookmark.color && (
+            <span
+              className={cn(
+                "h-2.5 w-2.5 rounded-full flex-shrink-0",
+                colorClasses[bookmark.color]
+              )}
+              aria-hidden="true"
+            />
+          )}
+          <MarqueeText className="truncate">
             <a
               href={bookmark.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="truncate text-base font-semibold text-slate-900 hover:underline dark:text-slate-100"
+              className="text-base font-semibold text-slate-900 hover:underline dark:text-slate-100"
             >
               {bookmark.title}
             </a>
-          </div>
-          {statusText && <p className="text-xs text-slate-500">{statusText}</p>}
+          </MarqueeText>
         </div>
 
         {/* Actions dropdown menu */}
@@ -165,6 +165,10 @@ export default function BookmarkCard({
         </div>
       </div>
 
+      {/* Status text */}
+      {statusText && <p className="text-xs text-slate-500">{statusText}</p>}
+
+      {/* URL */}
       <a
         href={bookmark.url}
         target="_blank"
@@ -176,11 +180,15 @@ export default function BookmarkCard({
       >
         {bookmark.url}
       </a>
+
+      {/* Description */}
       {bookmark.description && (
         <p className="text-sm text-slate-600 dark:text-slate-300">
           {bookmark.description}
         </p>
       )}
+
+      {/* Tags */}
       <BookmarkTags tags={bookmark.tags} />
     </Card>
   );

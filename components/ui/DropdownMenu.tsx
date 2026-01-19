@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { cloneElement, useEffect, isValidElement, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface DropdownMenuProps {
@@ -15,7 +15,7 @@ export default function DropdownMenu({
   align = "end",
 }: DropdownMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,17 +46,24 @@ export default function DropdownMenu({
     };
   }, [isOpen]);
 
+  const triggerElement = isValidElement(trigger)
+    ? cloneElement(trigger as React.ReactElement<any>, {
+        ref: triggerRef,
+        onClick: (e: React.MouseEvent) => {
+          setIsOpen(!isOpen);
+          // Also call the original onClick if it exists
+          if (trigger.props.onClick) {
+            trigger.props.onClick(e);
+          }
+        },
+        "aria-expanded": isOpen,
+        "aria-haspopup": true,
+      })
+    : trigger;
+
   return (
     <div className="relative inline-block">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-      >
-        {trigger}
-      </button>
+      {triggerElement}
       {isOpen && (
         <div
           ref={menuRef}
