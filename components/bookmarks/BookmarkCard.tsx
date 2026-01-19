@@ -47,17 +47,6 @@ export default function BookmarkCard({
     }
   };
 
-  const handleCardClick = (event: React.MouseEvent) => {
-    // Don't toggle selection when clicking buttons or links
-    if (
-      event.target instanceof HTMLElement &&
-      (event.target.closest("button") || event.target.closest("a"))
-    ) {
-      return;
-    }
-    onToggleSelect?.();
-  };
-
   return (
     <Card
       data-bookmark-card="true"
@@ -67,7 +56,6 @@ export default function BookmarkCard({
         isSelected && "ring-2 ring-rose-500",
         isPending && "opacity-70"
       )}
-      onClick={handleCardClick}
     >
       {/* Header row: checkbox - title - 3-dot menu */}
       <div className="flex items-center gap-3">
@@ -78,7 +66,6 @@ export default function BookmarkCard({
             checked={isSelected}
             onChange={onToggleSelect}
             className="h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500 cursor-pointer flex-shrink-0 dark:border-slate-600 dark:bg-slate-800"
-            onClick={(e) => e.stopPropagation()}
           />
         )}
 
