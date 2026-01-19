@@ -3,6 +3,8 @@ import { Bookmark } from '@voc/lib/types';
 
 const STORAGE_KEY = 'bookmark-vault-bookmarks';
 const STORAGE_VERSION = 1;
+const PREVIEW_CACHE_KEY = 'bookmark-vault-previews';
+const PREVIEW_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 type StoredBookmarks = {
   version: number;
@@ -108,4 +110,67 @@ export function searchBookmarks(query: string): Bookmark[] {
 
     return titleMatch || urlMatch || descriptionMatch || tagsMatch;
   });
+}
+
+export type BookmarkPreview = NonNullable<Bookmark['preview']>;
+
+interface StoredPreviews {
+  [bookmarkId: string]: BookmarkPreview & { _fetchedAt: number };
+}
+
+function getPreviewCache(): StoredPreviews {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(PREVIEW_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as StoredPreviews;
+    return typeof parsed === 'object' && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function savePreviewCache(cache: StoredPreviews): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PREVIEW_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // storage full, ignore
+  }
+}
+
+export function getPreview(bookmarkId: string): BookmarkPreview | null {
+  const cache = getPreviewCache();
+  const preview = cache[bookmarkId];
+  if (!preview) return null;
+
+  const isStale = Date.now() - preview._fetchedAt > PREVIEW_TTL;
+  if (isStale) return null;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { _fetchedAt, ...result } = preview;
+  return result;
+}
+
+export function savePreview(bookmarkId: string, preview: BookmarkPreview): void {
+  const cache = getPreviewCache();
+  cache[bookmarkId] = { ...preview, _fetchedAt: Date.now() };
+  savePreviewCache(cache);
+}
+
+export function deletePreview(bookmarkId: string): void {
+  const cache = getPreviewCache();
+  delete cache[bookmarkId];
+  savePreviewCache(cache);
+}
+
+export function clearStalePreviews(): void {
+  const cache = getPreviewCache();
+  const cleaned: StoredPreviews = {};
+  for (const [id, preview] of Object.entries(cache)) {
+    if (Date.now() - preview._fetchedAt <= PREVIEW_TTL) {
+      cleaned[id] = preview;
+    }
+  }
+  savePreviewCache(cleaned);
 }

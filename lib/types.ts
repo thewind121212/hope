@@ -17,4 +17,12 @@ export interface Bookmark {
   tags: string[];
   color?: BookmarkColor;
   createdAt: string;
+  preview?: {
+    faviconUrl: string | null;
+    siteName: string | null;
+    ogImageUrl: string | null;
+    previewTitle: string | null;
+    previewDescription: string | null;
+    lastFetchedAt: number | null;
+  };
 }

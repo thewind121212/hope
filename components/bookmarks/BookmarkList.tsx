@@ -40,6 +40,8 @@ export default function BookmarkList({
     pendingAdds,
     pendingDeletes,
     isInitialLoading,
+    fetchPreview,
+    refreshPreview,
     handleSearchChange,
     handleClearSearch,
     handleTagChange,
@@ -89,18 +91,30 @@ export default function BookmarkList({
   const cards = useMemo(
     () =>
       filteredBookmarks.map((bookmark) => (
-        <BookmarkCard
-          key={bookmark.id}
-          bookmark={bookmark}
-          onDelete={handleDeleteRequest}
-          onEdit={handleEditRequest}
-          isPendingAdd={pendingAdds.has(bookmark.id)}
-          isPendingDelete={pendingDeletes.has(bookmark.id)}
-          isSelected={isSelected(bookmark.id)}
-          onToggleSelect={() => toggle(bookmark.id)}
-        />
+          <BookmarkCard
+            key={bookmark.id}
+            bookmark={bookmark}
+            onDelete={handleDeleteRequest}
+            onEdit={handleEditRequest}
+            isPendingAdd={pendingAdds.has(bookmark.id)}
+            isPendingDelete={pendingDeletes.has(bookmark.id)}
+            isSelected={isSelected(bookmark.id)}
+            onToggleSelect={() => toggle(bookmark.id)}
+            fetchPreview={fetchPreview}
+            refreshPreview={refreshPreview}
+          />
       )),
-    [filteredBookmarks, handleDeleteRequest, handleEditRequest, pendingAdds, pendingDeletes, isSelected, toggle]
+    [
+      filteredBookmarks,
+      handleDeleteRequest,
+      handleEditRequest,
+      pendingAdds,
+      pendingDeletes,
+      isSelected,
+      toggle,
+      fetchPreview,
+      refreshPreview,
+    ]
   );
 
   return (

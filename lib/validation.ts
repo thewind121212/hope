@@ -76,6 +76,17 @@ export const UpdateBookmarkSchema = BookmarkSchema.partial().extend({
  */
 export const ImportBookmarksSchema = z.array(BookmarkSchema);
 
+const previewFieldsSchema = z.object({
+  faviconUrl: z.string().url().nullable().optional(),
+  siteName: z.string().max(100).nullable().optional(),
+  ogImageUrl: z.string().url().nullable().optional(),
+  previewTitle: z.string().max(200).nullable().optional(),
+  previewDescription: z.string().max(500).nullable().optional(),
+  lastFetchedAt: z.number().nullable().optional(),
+});
+
+export const PreviewSchema = previewFieldsSchema;
+
 export type CreateBookmarkInput = z.infer<typeof CreateBookmarkSchema>;
 export type UpdateBookmarkInput = z.infer<typeof UpdateBookmarkSchema>;
 export type ImportBookmarksInput = z.infer<typeof ImportBookmarksSchema>;

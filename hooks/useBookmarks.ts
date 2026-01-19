@@ -16,6 +16,9 @@ import {
   addBookmark as addToStorage,
   updateBookmark as updateInStorage,
   setBookmarks,
+  getPreview as getPreviewFromStorage,
+  savePreview as savePreviewToStorage,
+  clearStalePreviews,
 } from "@/lib/storage";
 import { Bookmark } from "@/lib/types";
 import { toast } from "sonner";
@@ -29,6 +32,10 @@ type DeleteBookmarkResult = { success: true } | { success: false; error: string 
 type UpdateBookmarkResult = { success: true } | { success: false; error: string };
 
 type ImportResult = { success: true } | { success: false; error: string };
+
+type FetchPreviewResult =
+  | { success: true; preview: NonNullable<Bookmark['preview']> }
+  | { success: false; error: string };
 
 type Action =
   | { type: "ADD_BOOKMARK"; bookmark: Bookmark }
@@ -44,6 +51,7 @@ type Action =
   | { type: "UPDATE_BOOKMARK_ERROR"; error: string }
   | { type: "IMPORT_BOOKMARKS_SUCCESS"; bookmarks: Bookmark[] }
   | { type: "IMPORT_BOOKMARKS_ERROR"; error: string }
+  | { type: "UPDATE_PREVIEW_SUCCESS"; id: string; preview: NonNullable<Bookmark['preview']> }
   | { type: "CLEAR_ERROR" };
 
 interface BookmarksState {
@@ -63,6 +71,8 @@ interface BookmarksContextValue {
   bulkDelete: (ids: string[]) => Promise<{ success: true } | { success: false; error: string }>;
   updateBookmark: (bookmark: Bookmark) => UpdateBookmarkResult;
   importBookmarks: (bookmarks: Bookmark[]) => Promise<ImportResult>;
+  fetchPreview: (id: string, url: string) => Promise<FetchPreviewResult>;
+  refreshPreview: (id: string, url: string) => Promise<FetchPreviewResult>;
   clearError: () => void;
 }
 
@@ -213,6 +223,16 @@ function reducer(state: BookmarksState, action: Action): BookmarksState {
         ...state,
         error: action.error,
       };
+    case "UPDATE_PREVIEW_SUCCESS":
+      return {
+        ...state,
+        bookmarks: state.bookmarks.map((bookmark) =>
+          bookmark.id === action.id
+            ? { ...bookmark, preview: action.preview }
+            : bookmark
+        ),
+        error: null,
+      };
     case "CLEAR_ERROR":
       return {
         ...state,
@@ -248,7 +268,11 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         bookmarks: storedBookmarks,
       });
     }
-    setIsInitialLoading(false);
+    clearStalePreviews();
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const clearError = useCallback(() => {
@@ -459,6 +483,82 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     [simulateError]
   );
 
+  const fetchPreview = useCallback(
+    async (id: string, url: string): Promise<FetchPreviewResult> => {
+      const cached = getPreviewFromStorage(id);
+      if (cached) {
+        dispatch({ type: "UPDATE_PREVIEW_SUCCESS", id, preview: cached });
+        return { success: true, preview: cached };
+      }
+
+      try {
+        const encodedUrl = encodeURIComponent(url);
+        const res = await fetch(`/api/link-preview?url=${encodedUrl}`);
+        if (!res.ok) {
+          const error = await res.json().then((e) => e.error || "Failed to fetch preview");
+          return { success: false, error };
+        }
+
+        const data = await res.json();
+        if (data.status !== "success") {
+          return { success: false, error: data.error || "Preview unavailable" };
+        }
+
+        const preview: NonNullable<Bookmark["preview"]> = {
+          faviconUrl: data.faviconUrl,
+          siteName: data.siteName,
+          ogImageUrl: data.ogImageUrl,
+          previewTitle: data.previewTitle,
+          previewDescription: data.previewDescription,
+          lastFetchedAt: data.lastFetchedAt,
+        };
+
+        savePreviewToStorage(id, preview);
+        dispatch({ type: "UPDATE_PREVIEW_SUCCESS", id, preview });
+        return { success: true, preview };
+      } catch {
+        return { success: false, error: "Failed to fetch preview" };
+      }
+    },
+    []
+  );
+
+  const refreshPreview = useCallback(
+    async (id: string, url: string): Promise<FetchPreviewResult> => {
+      try {
+        const encodedUrl = encodeURIComponent(url);
+        const res = await fetch(`/api/link-preview?url=${encodedUrl}`);
+        if (!res.ok) {
+          const error = await res.json().then((e) => e.error || "Failed to refresh preview");
+          return { success: false, error };
+        }
+
+        const data = await res.json();
+        if (data.status !== "success") {
+          return { success: false, error: data.error || "Preview unavailable" };
+        }
+
+        const preview: NonNullable<Bookmark["preview"]> = {
+          faviconUrl: data.faviconUrl,
+          siteName: data.siteName,
+          ogImageUrl: data.ogImageUrl,
+          previewTitle: data.previewTitle,
+          previewDescription: data.previewDescription,
+          lastFetchedAt: data.lastFetchedAt,
+        };
+
+        savePreviewToStorage(id, preview);
+        dispatch({ type: "UPDATE_PREVIEW_SUCCESS", id, preview });
+        toast.success("Preview refreshed");
+        return { success: true, preview };
+      } catch {
+        toast.error("Failed to refresh preview");
+        return { success: false, error: "Failed to refresh preview" };
+      }
+    },
+    []
+  );
+
   const value = useMemo(
     () => ({
       state,
@@ -470,6 +570,8 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       bulkDelete,
       updateBookmark,
       importBookmarks,
+      fetchPreview,
+      refreshPreview,
       clearError,
     }),
     [
@@ -481,6 +583,8 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       bulkDelete,
       updateBookmark,
       importBookmarks,
+      fetchPreview,
+      refreshPreview,
       clearError,
     ]
   );
@@ -525,5 +629,7 @@ export function useBookmarks(searchTerm: string = "") {
     bulkDelete: context.bulkDelete,
     updateBookmark: context.updateBookmark,
     importBookmarks: context.importBookmarks,
+    fetchPreview: context.fetchPreview,
+    refreshPreview: context.refreshPreview,
   };
 }
