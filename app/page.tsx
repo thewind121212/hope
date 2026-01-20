@@ -18,10 +18,15 @@ import SpacesSidebar, { type SpaceSelection } from "@/components/spaces/SpacesSi
 import { useUiStore } from "@/stores/useUiStore";
 import { useVaultStore } from "@/stores/vault-store";
 import { UnlockScreen } from "@/components/vault/UnlockScreen";
+import { useSyncOptional } from "@/hooks/useSyncProvider";
+import { BookmarkListSkeleton } from "@/components/bookmarks/BookmarkCardSkeleton";
 
 export default function Home() {
   const { isLoaded, isSignedIn } = useAuth();
-  
+
+  // Sync state - must be called before any conditional returns
+  const sync = useSyncOptional();
+
   // Read from store
   const selectedSpaceId = useUiStore((s) => s.selectedSpaceId);
   const searchQuery = useUiStore((s) => s.searchQuery);
@@ -67,12 +72,73 @@ export default function Home() {
     return match?.name ?? "Space";
   }, [selectedSpaceId]);
 
-  // Loading state - wait for auth and vault initialization
-  if (!isLoaded) {
+  // Loading state - wait for auth and vault initialization, or during migration check
+  if (!isLoaded || sync?.isCheckingMigration) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-pulse text-slate-500">Loading...</div>
-      </div>
+      <ErrorBoundary>
+        <BookmarksProvider>
+          <div className="space-y-10">
+            {/* Header skeleton */}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="h-4 w-32 rounded bg-zinc-200 dark:bg-slate-700 animate-pulse mb-2" />
+                <div className="h-8 w-48 rounded bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+              </div>
+              <div className="flex gap-3">
+                <div className="h-10 w-28 rounded-lg bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                <div className="h-10 w-10 rounded-lg bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                <div className="h-10 w-10 rounded-lg bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Main content skeleton */}
+            <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
+              {/* Sidebar skeleton */}
+              <div className="hidden lg:block">
+                <div className="space-y-3">
+                  <div className="h-5 w-20 rounded bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                  <div className="space-y-2">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="h-9 w-full rounded bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bookmark list skeleton */}
+              <div className="min-w-0 space-y-6">
+                {/* Mobile space selector skeleton */}
+                <div className="flex items-center justify-between gap-3 lg:hidden">
+                  <div className="min-w-0">
+                    <div className="h-3 w-12 rounded bg-zinc-200 dark:bg-slate-700 animate-pulse mb-1" />
+                    <div className="h-4 w-28 rounded bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                  </div>
+                  <div className="h-9 w-20 rounded-lg bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                </div>
+
+                {/* BookmarkToolbar skeleton - search/filter bar */}
+                <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="h-10 flex-1 min-w-[200px] rounded-lg bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                    <div className="h-10 w-24 rounded-lg bg-zinc-200 dark:bg-slate-700 animate-pulse hidden sm:block" />
+                    <div className="h-10 w-28 rounded-lg bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                    <div className="h-10 w-10 rounded-lg bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                  </div>
+                  {/* Filter chips skeleton */}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <div className="h-7 w-24 rounded-full bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                    <div className="h-7 w-20 rounded-full bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                    <div className="h-7 w-16 rounded-full bg-zinc-200 dark:bg-slate-700 animate-pulse" />
+                  </div>
+                </div>
+
+                {/* Bookmark cards skeleton */}
+                <BookmarkListSkeleton count={6} />
+              </div>
+            </div>
+          </div>
+        </BookmarksProvider>
+      </ErrorBoundary>
     );
   }
 

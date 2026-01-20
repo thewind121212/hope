@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Bookmark } from '@voc/lib/types';
+import { calculateCombinedChecksum } from '@/lib/checksum';
 
 const STORAGE_KEY = 'bookmark-vault-bookmarks';
 const STORAGE_VERSION = 1;
@@ -69,6 +70,9 @@ export function addBookmark(
   const bookmarks = loadBookmarks();
   saveBookmarks([...bookmarks, newBookmark]);
 
+  // Update checksum after adding
+  recalculateAndSaveChecksum();
+
   return newBookmark;
 }
 
@@ -76,12 +80,18 @@ export function deleteBookmark(id: string): void {
   const bookmarks = loadBookmarks();
   const filtered = bookmarks.filter((b) => b.id !== id);
   saveBookmarks(filtered);
+
+  // Update checksum after deleting
+  recalculateAndSaveChecksum();
 }
 
 export function deleteBookmarks(ids: string[]): void {
   const bookmarks = loadBookmarks();
   const filtered = bookmarks.filter((b) => !ids.includes(b.id));
   saveBookmarks(filtered);
+
+  // Update checksum after deleting
+  recalculateAndSaveChecksum();
 }
 
 export function updateBookmark(bookmark: Bookmark): Bookmark | null {
@@ -89,11 +99,21 @@ export function updateBookmark(bookmark: Bookmark): Bookmark | null {
   const updated = bookmarks.map((item) =>
     item.id === bookmark.id ? bookmark : item
   );
-  return saveBookmarks(updated) ? bookmark : null;
+  const saved = saveBookmarks(updated);
+
+  // Update checksum after updating
+  recalculateAndSaveChecksum();
+
+  return saved ? bookmark : null;
 }
 
 export function setBookmarks(bookmarks: Bookmark[]): boolean {
-  return saveBookmarks(bookmarks);
+  const saved = saveBookmarks(bookmarks);
+
+  // Update checksum after setting
+  recalculateAndSaveChecksum();
+
+  return saved;
 }
 
 export function searchBookmarks(query: string): Bookmark[] {
@@ -227,4 +247,44 @@ export function clearChecksum(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(CHECKSUM_KEY);
   localStorage.removeItem(CHECKSUM_META_KEY);
+}
+
+/**
+ * Recalculate and save the combined checksum for all local data.
+ * This should be called whenever local data changes (bookmarks, spaces, or pinned views).
+ */
+export async function recalculateAndSaveChecksum(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  try {
+    // Get all local data
+    const bookmarks = getBookmarks();
+
+    // Import these dynamically to avoid circular dependencies
+    const { getSpaces } = await import('@/lib/spacesStorage');
+    const { getPinnedViews } = await import('@/lib/pinnedViewsStorage');
+    const spaces = getSpaces();
+    const pinnedViews = getPinnedViews();
+
+    // Calculate combined checksum
+    const checksum = await calculateCombinedChecksum(
+      bookmarks,
+      spaces,
+      pinnedViews
+    );
+
+    // Save checksum metadata
+    saveChecksumMeta({
+      checksum,
+      count: bookmarks.length + spaces.length + pinnedViews.length,
+      lastUpdate: new Date().toISOString(),
+      perTypeCounts: {
+        bookmarks: bookmarks.length,
+        spaces: spaces.length,
+        pinnedViews: pinnedViews.length,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to recalculate checksum:', error);
+  }
 }

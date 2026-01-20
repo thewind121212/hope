@@ -43,7 +43,6 @@ export interface MigrationState {
 export interface MigrationActions {
   checkForConflict: () => Promise<boolean>;
   resolveMigration: (strategy: MergeStrategy) => Promise<void>;
-  skipMigration: () => void;
 }
 
 const MIGRATION_CHECKED_KEY = 'sync-migration-checked';
@@ -60,15 +59,15 @@ export function useSyncMigration(): MigrationState & MigrationActions {
     cloudData: null,
   });
 
-  // Check if migration was already handled this session
+  // Check if migration was already handled
   const wasMigrationChecked = useCallback(() => {
     if (typeof window === 'undefined') return true;
-    return sessionStorage.getItem(MIGRATION_CHECKED_KEY) === 'true';
+    return localStorage.getItem(MIGRATION_CHECKED_KEY) === 'true';
   }, []);
 
   const markMigrationChecked = useCallback(() => {
     if (typeof window === 'undefined') return;
-    sessionStorage.setItem(MIGRATION_CHECKED_KEY, 'true');
+    localStorage.setItem(MIGRATION_CHECKED_KEY, 'true');
   }, []);
 
   // Load local data from localStorage
@@ -278,20 +277,9 @@ export function useSyncMigration(): MigrationState & MigrationActions {
     }
   }, [state, markMigrationChecked, triggerRefresh]);
 
-  // Skip migration (user cancelled)
-  const skipMigration = useCallback(() => {
-    markMigrationChecked();
-    setState({
-      status: 'idle',
-      localData: null,
-      cloudData: null,
-    });
-  }, [markMigrationChecked]);
-
   return {
     ...state,
     checkForConflict,
     resolveMigration,
-    skipMigration,
   };
 }

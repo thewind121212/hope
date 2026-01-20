@@ -35,6 +35,7 @@ interface SyncContextValue {
   isOnline: boolean;
   canSync: boolean;
   checksumMatched: boolean;
+  isCheckingMigration: boolean;
 
   // Sync actions
   syncNow: () => Promise<{ pushed: number; pulled: number }>;
@@ -204,10 +205,11 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     await syncEngine.syncPull();
   }, [migration, syncEngine]);
 
-  const handleMigrationSkip = useCallback(() => {
-    migration.skipMigration();
-    setShowMigrationDialog(false);
-  }, [migration]);
+  const handleLogout = useCallback(async () => {
+    // Use Clerk's signOut method
+    await (window as any).Clerk?.signOut?.();
+    window.location.href = '/';
+  }, []);
 
   const value: SyncContextValue = {
     isSyncing: syncEngine.isSyncing,
@@ -217,6 +219,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     isOnline,
     canSync: syncEngine.canSync,
     checksumMatched,
+    isCheckingMigration: migration.status === 'checking',
     syncNow,
     queueBookmarkSync,
     queueSpaceSync,
@@ -236,7 +239,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
           localData={migration.localData}
           cloudData={migration.cloudData}
           onResolve={handleMigrationResolve}
-          onSkip={handleMigrationSkip}
+          onLogout={handleLogout}
         />
       )}
     </SyncContext.Provider>

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type { Space } from "@voc/lib/types";
+import { recalculateAndSaveChecksum } from "@/lib/storage";
 
 const SPACES_KEY = "bookmark-vault-spaces";
 
@@ -48,7 +49,9 @@ function saveSpaces(spaces: Space[]): boolean {
 }
 
 export function setSpaces(spaces: Space[]): boolean {
-  return saveSpaces(spaces);
+  const saved = saveSpaces(spaces);
+  recalculateAndSaveChecksum();
+  return saved;
 }
 
 export function ensureDefaultSpace(): Space {
@@ -58,6 +61,7 @@ export function ensureDefaultSpace(): Space {
 
   const personal = getDefaultPersonalSpace();
   saveSpaces([personal, ...spaces]);
+  recalculateAndSaveChecksum();
   return personal;
 }
 
@@ -68,6 +72,7 @@ export function getSpaces(): Space[] {
 
   const defaultSpace = getDefaultPersonalSpace();
   saveSpaces([defaultSpace, ...spaces]);
+  recalculateAndSaveChecksum();
   return [defaultSpace, ...spaces];
 }
 
@@ -82,6 +87,7 @@ export function addSpace(input: { name: string; color?: string }): Space {
 
   const spaces = getSpaces();
   saveSpaces([...spaces, newSpace]);
+  recalculateAndSaveChecksum();
   return newSpace;
 }
 
@@ -93,17 +99,23 @@ export function updateSpace(space: Space): Space | null {
         ? { ...item, name: space.name, color: space.color }
         : item
     );
-    return saveSpaces(updated) ? space : null;
+    const saved = saveSpaces(updated);
+    recalculateAndSaveChecksum();
+    return saved ? space : null;
   }
 
   const spaces = getSpaces();
   const updated = spaces.map((item) => (item.id === space.id ? space : item));
-  return saveSpaces(updated) ? space : null;
+  const saved = saveSpaces(updated);
+  recalculateAndSaveChecksum();
+  return saved ? space : null;
 }
 
 export function deleteSpace(spaceId: string): boolean {
   if (spaceId === PERSONAL_SPACE_ID) return false;
   const spaces = getSpaces();
   const filtered = spaces.filter((space) => space.id !== spaceId);
-  return saveSpaces(filtered);
+  const saved = saveSpaces(filtered);
+  recalculateAndSaveChecksum();
+  return saved;
 }

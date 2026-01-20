@@ -22,7 +22,7 @@ interface MigrationDialogProps {
   localData: DataSet;
   cloudData: DataSet;
   onResolve: (strategy: MergeStrategy) => Promise<void>;
-  onSkip: () => void;
+  onLogout: () => void;
 }
 
 export function MigrationDialog({
@@ -31,7 +31,7 @@ export function MigrationDialog({
   localData,
   cloudData,
   onResolve,
-  onSkip,
+  onLogout,
 }: MigrationDialogProps) {
   const [selectedStrategy, setSelectedStrategy] = useState<MergeStrategy>('merge');
   const [isResolving, setIsResolving] = useState(false);
@@ -40,7 +40,7 @@ export function MigrationDialog({
   const handleResolve = async () => {
     setIsResolving(true);
     setError(null);
-    
+
     try {
       await onResolve(selectedStrategy);
       onClose();
@@ -52,16 +52,11 @@ export function MigrationDialog({
     }
   };
 
-  const handleSkip = () => {
-    onSkip();
-    onClose();
-  };
-
   const localCount = countDataSet(localData);
   const cloudCount = countDataSet(cloudData);
 
   return (
-    <Modal isOpen={isOpen} onClose={handleSkip} title="Data Sync Conflict">
+    <Modal isOpen={isOpen} onClose={() => {}} closeOnBackdrop={false} title="Data Sync Conflict">
       <div className="space-y-5">
         {/* Warning */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 dark:bg-amber-950/30 dark:border-amber-800">
@@ -109,16 +104,7 @@ export function MigrationDialog({
             description="Combine local and cloud data. Duplicates will be removed, keeping the most recent version."
             recommended
           />
-          
-          <StrategyOption
-            id="local-wins"
-            selected={selectedStrategy === 'local-wins'}
-            onSelect={() => setSelectedStrategy('local-wins')}
-            icon={<HardDrive className="w-4 h-4" />}
-            title="Keep Local Only"
-            description="Use your device data and discard cloud data."
-          />
-          
+
           <StrategyOption
             id="cloud-wins"
             selected={selectedStrategy === 'cloud-wins'}
@@ -141,10 +127,10 @@ export function MigrationDialog({
           <Button
             type="button"
             variant="secondary"
-            onClick={handleSkip}
+            onClick={onLogout}
             disabled={isResolving}
           >
-            Skip for Now
+            Logout
           </Button>
           <Button
             onClick={handleResolve}

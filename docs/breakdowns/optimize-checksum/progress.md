@@ -1,8 +1,8 @@
 # Optimize Checksum - Implementation Progress
 
 **Last Updated:** 2025-01-20
-**Total Tasks:** 8
-**Completed:** 8
+**Total Tasks:** 12
+**Completed:** 12
 **In Progress:** 0
 **Pending:** 0
 
@@ -80,6 +80,20 @@ Ready
 
 ---
 
+## Epic 4: Offline-First Sync with Cloud-As-Truth
+
+**Status:** Complete
+**Completion:** 4/4 tasks (100%)
+
+| Task | Status | Notes | Updated |
+|------|--------|-------|---------|
+| T-OFF-01 | ✅ done | Auto-save checksum on local changes | 2025-01-20 |
+| T-OFF-02 | ✅ done | Update useBookmarks hook to update checksum | 2025-01-20 |
+| T-OFF-03 | ✅ done | Ensure sync updates local checksum | 2025-01-20 |
+| T-OFF-04 | ✅ done | Verify cloud-wins behavior | 2025-01-20 |
+
+---
+
 ## Target Flow After Implementation
 
 ```
@@ -142,14 +156,22 @@ All 8 tasks completed successfully. Build verification passed.
 **Epic 3: Testing & Verification**
 - ✅ T-CHK-08: Build passed with no TypeScript errors
 
+**Epic 4: Offline-First Sync with Cloud-As-Truth**
+- ✅ T-OFF-01: Added `recalculateAndSaveChecksum()` to storage files
+- ✅ T-OFF-02: Verified useBookmarks hook delegates to storage layer (no changes needed)
+- ✅ T-OFF-03: Added `applyPulledRecords()` to sync engine, updates checksum after pull
+- ✅ T-OFF-04: Verified cloud-wins behavior - pulled data overwrites local
+
 **Files Created/Modified:**
 - `lib/checksum.ts` - CREATE
 - `app/api/sync/plaintext/checksum/route.ts` - CREATE
 - `app/api/sync/plaintext/push/route.ts` - MODIFY
-- `lib/storage.ts` - MODIFY (added checksum storage)
+- `lib/storage.ts` - MODIFY (added checksum storage + recalculateAndSaveChecksum)
+- `lib/spacesStorage.ts` - MODIFY (call recalculateAndSaveChecksum)
+- `lib/pinnedViewsStorage.ts` - MODIFY (call recalculateAndSaveChecksum)
 - `lib/types.ts` - MODIFY (added checksum fields to SyncPushResult)
 - `lib/plaintext-sync-engine.ts` - MODIFY (save checksum after push)
-- `hooks/useSyncEngineUnified.ts` - MODIFY (added checkAndSync)
+- `hooks/useSyncEngineUnified.ts` - MODIFY (added checkAndSync + applyPulledRecords)
 - `hooks/useSyncProvider.tsx` - MODIFY (use checkAndSync on startup)
 
 **Manual Testing Steps:**
@@ -159,6 +181,11 @@ All 8 tasks completed successfully. Build verification passed.
 4. Observe: Only `/api/sync/plaintext/checksum` called first (~100 bytes)
 5. If checksum matches → no pull request ✅
 6. If checksum differs → pull request follows
+
+**Offline-First Testing:**
+1. Logout → Add/edit bookmark locally → Checksum should update in localStorage ✅
+2. Login → Compare checksums → Cloud data should overwrite local (cloud-wins) ✅
+3. Verify local checksum matches cloud after login ✅
 
 ### 2025-01-20 (Planning)
 - Created epic breakdown

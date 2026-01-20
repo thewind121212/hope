@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import type { PinnedView } from "@voc/lib/types";
+import { recalculateAndSaveChecksum } from "@/lib/storage";
 
 const PINNED_VIEWS_KEY = "bookmark-vault-pinned-views";
 
@@ -36,6 +37,7 @@ export function savePinnedViews(views: PinnedView[]): boolean {
   if (typeof window === "undefined") return false;
   try {
     localStorage.setItem(PINNED_VIEWS_KEY, JSON.stringify(views));
+    recalculateAndSaveChecksum();
     return true;
   } catch {
     return false;
@@ -79,5 +81,6 @@ export function deletePinnedView(id: string): boolean {
 export function updatePinnedView(next: PinnedView): PinnedView | null {
   const existing = loadPinnedViews();
   const updated = existing.map((view) => (view.id === next.id ? next : view));
-  return savePinnedViews(updated) ? next : null;
+  const saved = savePinnedViews(updated);
+  return saved ? next : null;
 }

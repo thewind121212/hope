@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useSyncSettingsStore } from '@/stores/sync-settings-store';
 import { useVaultStore } from '@/stores/vault-store';
+import { useDataRefreshStore } from '@/stores/data-refresh-store';
 import type { 
   Bookmark, 
   Space, 
@@ -113,6 +114,7 @@ export function useSyncEngine(): UseSyncEngineReturn {
 
   const { syncMode, syncEnabled, setLastSyncAt } = useSyncSettingsStore();
   const { isUnlocked, vaultEnvelope, vaultKey } = useVaultStore();
+  const { triggerRefresh } = useDataRefreshStore();
   
   // Ref to track if sync is in progress (prevents concurrent syncs)
   const syncInProgressRef = useRef(false);
@@ -284,6 +286,48 @@ export function useSyncEngine(): UseSyncEngineReturn {
     return { pushed: pushResult.synced, pulled: pulled.length };
   }, [syncPush, syncPull]);
 
+  // Helper to apply pulled records to localStorage
+  const applyPulledRecords = useCallback((records: PlaintextRecord[]) => {
+    const bookmarks: Bookmark[] = [];
+    const spaces: Space[] = [];
+    const pinnedViews: PinnedView[] = [];
+
+    for (const record of records) {
+      if (record.deleted) continue;
+
+      const plaintextRecord = record as PlaintextRecord;
+      switch (plaintextRecord.recordType) {
+        case 'bookmark':
+          bookmarks.push({
+            ...(plaintextRecord.data as Bookmark),
+            _syncVersion: plaintextRecord.version,
+          });
+          break;
+        case 'space':
+          spaces.push({
+            ...(plaintextRecord.data as Space),
+            _syncVersion: plaintextRecord.version,
+          });
+          break;
+        case 'pinned-view':
+          pinnedViews.push({
+            ...(plaintextRecord.data as PinnedView),
+            _syncVersion: plaintextRecord.version,
+          });
+          break;
+      }
+    }
+
+    // Apply to localStorage (this also recalculates checksum via recalculateAndSaveChecksum)
+    if (bookmarks.length > 0 || spaces.length > 0 || pinnedViews.length > 0) {
+      setBookmarks(bookmarks);
+      setSpaces(spaces);
+      savePinnedViews(pinnedViews);
+      // Trigger React state refresh
+      triggerRefresh();
+    }
+  }, [triggerRefresh]);
+
   // Check checksum before pulling (optimized sync)
   const checkAndSync = useCallback(async (): Promise<{ pulled: number; skipped: boolean }> => {
     if (!canSync()) {
@@ -306,6 +350,7 @@ export function useSyncEngine(): UseSyncEngineReturn {
       if (!response.ok) {
         // If checksum endpoint fails, fall back to full pull
         const records = await syncPull();
+        applyPulledRecords(records);
         setState(prev => ({ ...prev, progress: 100 }));
         return { pulled: records.length, skipped: false };
       }
@@ -315,6 +360,7 @@ export function useSyncEngine(): UseSyncEngineReturn {
       // If no local checksum exists, always pull
       if (!localMeta) {
         const records = await syncPull();
+        applyPulledRecords(records);
         // Save the server checksum after pull
         saveChecksumMeta(serverMeta);
         setState(prev => ({ ...prev, progress: 100 }));
@@ -334,8 +380,9 @@ export function useSyncEngine(): UseSyncEngineReturn {
         return { pulled: 0, skipped: true };
       }
 
-      // Something doesn't match - pull data
+      // Something doesn't match - pull data and apply it
       const records = await syncPull();
+      applyPulledRecords(records);
       // Save the new checksum after pull
       saveChecksumMeta(serverMeta);
       setState(prev => ({ ...prev, progress: 100 }));
@@ -346,6 +393,7 @@ export function useSyncEngine(): UseSyncEngineReturn {
       // On error, fall back to full pull
       try {
         const records = await syncPull();
+        applyPulledRecords(records);
         return { pulled: records.length, skipped: false };
       } catch {
         return { pulled: 0, skipped: false };
@@ -354,7 +402,7 @@ export function useSyncEngine(): UseSyncEngineReturn {
       syncInProgressRef.current = false;
       setState(prev => ({ ...prev, isSyncing: false }));
     }
-  }, [canSync, syncPull]);
+  }, [canSync, syncPull, applyPulledRecords]);
 
   // Queue bookmark for sync
   const queueBookmark = useCallback((
