@@ -50,11 +50,22 @@ export default function BookmarkFormModal({
     if (isOpen) {
       resetForm(initialBookmark ?? null);
       const spaces = getSpaces();
+
+      // When in a specific space (not "all"), only show that space in dropdown
+      // unless editing an existing bookmark (which may be in a different space)
+      if (selectedSpaceId && selectedSpaceId !== "all" && !editingBookmark) {
+        const currentSpace = spaces.find((s) => s.id === selectedSpaceId);
+        if (currentSpace) {
+          setSpaceOptions([{ value: currentSpace.id, label: currentSpace.name }]);
+          return;
+        }
+      }
+
       setSpaceOptions(
         spaces.map((space) => ({ value: space.id, label: space.name }))
       );
     }
-  }, [isOpen, editingBookmark, resetForm]);
+  }, [isOpen, editingBookmark, resetForm, selectedSpaceId]);
 
   const safeSpaceOptions = useMemo(() => {
     if (spaceOptions.length > 0) return spaceOptions;

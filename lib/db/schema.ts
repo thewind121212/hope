@@ -13,11 +13,24 @@ export interface Vault {
 export interface Record {
   id: string;
   user_id: string;
-  vault_id: string;
+  vault_id: string | null;
   record_id: string;
-  ciphertext: Buffer;
+  record_type: 'bookmark' | 'space' | 'pinned-view';
+  ciphertext: Buffer | null;
+  data: unknown | null; // JSONB - Bookmark | Space | PinnedView
+  encrypted: boolean;
   version: number;
   deleted: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface SyncSettings {
+  id: string;
+  user_id: string;
+  sync_enabled: boolean;
+  sync_mode: 'off' | 'plaintext' | 'e2e';
+  last_sync_at: Date | null;
   created_at: Date;
   updated_at: Date;
 }

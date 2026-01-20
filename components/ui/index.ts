@@ -9,3 +9,4 @@ export { Modal } from "@voc/components/ui/Modal";
 export { default as Select } from "@voc/components/ui/Select";
 export { default as Textarea } from "@voc/components/ui/Textarea";
 export { default as ToastProvider } from "@voc/components/ui/ToastProvider";
+export { ToggleSwitch } from "@voc/components/ui/ToggleSwitch";

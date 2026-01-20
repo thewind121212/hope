@@ -1,10 +1,10 @@
 # E2E Vault Feature - Implementation Progress
 
-**Last Updated:** 2025-01-19
+**Last Updated:** 2025-01-20
 **Total Tasks:** 28
-**Completed:** 8
+**Completed:** 14
 **In Progress:** 0
-**Pending:** 20
+**Pending:** 14
 
 ---
 
@@ -28,17 +28,17 @@
 
 ## Epic 2: Vault Crypto + Unlock UX
 
-**Status:** Not Started
-**Completion:** 0/6 tasks (0%)
+**Status:** COMPLETE ✅
+**Completion:** 6/6 tasks (100%)
 
 | Task | Status | Notes | Updated |
 |------|--------|-------|---------|
-| T-CRYPTO-01 | pending | | - |
-| T-CRYPTO-02 | pending | | - |
-| T-CRYPTO-03 | pending | | - |
-| T-CRYPTO-04 | pending | | - |
-| T-CRYPTO-05 | pending | | - |
-| T-CRYPTO-06 | pending | | - |
+| T-CRYPTO-01 | done | WebCrypto helpers: PBKDF2, AES-GCM, key wrap/unwrap | 2025-01-20 |
+| T-CRYPTO-02 | done | VaultKeyEnvelope, EncryptedRecord types and Zod schemas | 2025-01-20 |
+| T-CRYPTO-03 | done | UnlockScreen component, useVaultUnlock hook, vault store | 2025-01-20 |
+| T-CRYPTO-04 | done | EnableVaultModal, useVaultEnable hook | 2025-01-20 |
+| T-CRYPTO-05 | done | Encrypted local storage layer with versioning | 2025-01-20 |
+| T-CRYPTO-06 | done | VaultToggle, VaultStatusIndicator, DisableVaultDialog | 2025-01-20 |
 
 ---
 

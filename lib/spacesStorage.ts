@@ -47,6 +47,10 @@ function saveSpaces(spaces: Space[]): boolean {
   }
 }
 
+export function setSpaces(spaces: Space[]): boolean {
+  return saveSpaces(spaces);
+}
+
 export function ensureDefaultSpace(): Space {
   const spaces = loadSpaces();
   const existing = spaces.find((space) => space.id === PERSONAL_SPACE_ID);

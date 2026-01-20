@@ -91,3 +91,36 @@ export const PreviewSchema = previewFieldsSchema;
 export type CreateBookmarkInput = z.infer<typeof CreateBookmarkSchema>;
 export type UpdateBookmarkInput = z.infer<typeof UpdateBookmarkSchema>;
 export type ImportBookmarksInput = z.infer<typeof ImportBookmarksSchema>;
+
+export const KdfParamsSchema = z.object({
+  algorithm: z.literal('PBKDF2'),
+  iterations: z.number().int().min(100000),
+  saltLength: z.number().int().min(16),
+  keyLength: z.literal(256),
+});
+
+export const VaultKeyEnvelopeSchema = z.object({
+  wrappedKey: z.string().base64(),
+  salt: z.string().base64(),
+  kdfParams: KdfParamsSchema,
+  version: z.number().int().positive(),
+});
+
+export const EncryptedRecordSchema = z.object({
+  recordId: z.string().uuid(),
+  ciphertext: z.string().base64(),
+  iv: z.string().base64(),
+  tag: z.string().base64(),
+  version: z.number().int().positive(),
+  deleted: z.boolean().optional().default(false),
+});
+
+export const VaultEnableRequestSchema = z.object({
+  wrappedKey: z.string().base64(),
+  salt: z.string().base64(),
+  kdfParams: KdfParamsSchema,
+});
+
+export type VaultKeyEnvelopeInput = z.infer<typeof VaultKeyEnvelopeSchema>;
+export type EncryptedRecordInput = z.infer<typeof EncryptedRecordSchema>;
+export type VaultEnableRequestInput = z.infer<typeof VaultEnableRequestSchema>;

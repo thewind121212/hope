@@ -7,19 +7,14 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import SpaceFormModal from "@/components/spaces/SpaceFormModal";
 import PinnedViewFormModal from "@/components/spaces/PinnedViewFormModal";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useSpaces } from "@/hooks/useSpaces";
 import { cn } from "@/lib/utils";
 import {
   PERSONAL_SPACE_ID,
-  addSpace,
-  deleteSpace,
   getSpaces,
-  updateSpace,
 } from "@/lib/spacesStorage";
-import {
-  addPinnedView,
-  deletePinnedView,
-  getPinnedViews,
-} from "@/lib/pinnedViewsStorage";
+import { getPinnedViews } from "@/lib/pinnedViewsStorage";
+import { usePinnedViews } from "@/hooks/usePinnedViews";
 import type { PinnedView, Space } from "@/lib/types";
 import { useUiStore } from "@/stores/useUiStore";
 
@@ -103,6 +98,8 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
   const [isPinnedViewFormOpen, setIsPinnedViewFormOpen] = useState(false);
 
   const { allBookmarks, moveBookmarksToSpace } = useBookmarks();
+  const { addSpace, updateSpace, deleteSpace } = useSpaces();
+  const { addPinnedView, deletePinnedView } = usePinnedViews();
 
   useEffect(() => {
     setIsHydrated(true);

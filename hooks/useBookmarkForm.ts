@@ -85,7 +85,7 @@ export function useBookmarkForm(options?: {
         successTimeoutRef.current = null;
       }
     },
-    [clearError, errorMessage, options?.initialBookmark]
+    [clearError, errorMessage, options?.initialBookmark, options?.defaultSpaceId]
   );
 
   const clearForm = useCallback(() => {

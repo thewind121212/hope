@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/db';
+import type { RecordType } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
   const authResult = await auth();
@@ -11,16 +12,24 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const cursor = searchParams.get('cursor');
+  const recordType = searchParams.get('recordType') as RecordType | null;
   const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 1000);
 
   try {
     let queryText = `
-      SELECT record_id, ciphertext, version, deleted, updated_at
+      SELECT record_id, record_type, ciphertext, version, deleted, updated_at
       FROM records
-      WHERE user_id = $1
+      WHERE user_id = $1 AND encrypted = true
     `;
-    const params: (string | number | null)[] = [userId];
+    const params: (string | number)[] = [userId];
     let paramIndex = 2;
+
+    // Filter by record type if specified
+    if (recordType && ['bookmark', 'space', 'pinned-view'].includes(recordType)) {
+      queryText += ` AND record_type = $${paramIndex}`;
+      params.push(recordType);
+      paramIndex++;
+    }
 
     if (cursor) {
       queryText += ` AND updated_at > $${paramIndex}`;
@@ -42,7 +51,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       records: records.map((r) => ({
         recordId: r.record_id,
-        ciphertext: r.ciphertext,
+        recordType: r.record_type || 'bookmark', // Default for backward compatibility
+        ciphertext: r.ciphertext?.toString('base64') || null,
         version: r.version,
         deleted: r.deleted,
         updatedAt: r.updated_at,

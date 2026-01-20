@@ -7,6 +7,7 @@ import {
   useReducer,
   useState,
   useEffect,
+  useRef,
   type ReactNode,
 } from "react";
 import {
@@ -22,6 +23,8 @@ import {
 } from "@/lib/storage";
 import { Bookmark } from "@/lib/types";
 import { toast } from "sonner";
+import { useDataRefreshStore } from "@/stores/data-refresh-store";
+import { useSyncOptional } from "@/hooks/useSyncProvider";
 
 type AddBookmarkResult =
   | { success: true; bookmark: Bookmark }
@@ -261,6 +264,22 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   const [simulateError, setSimulateError] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
+  // Sync context (optional - won't exist if outside SyncProvider)
+  const syncContext = useSyncOptional();
+  
+  // Data refresh store - when refreshKey changes, reload from localStorage
+  const { refreshKey } = useDataRefreshStore();
+  const initialLoadDone = useRef(false);
+
+  // Queue sync operation helper - uses SyncProvider's queueBookmarkSync
+  // which triggers debounced auto-sync
+  const queueSync = useCallback((bookmark: Bookmark, deleted: boolean = false) => {
+    if (syncContext) {
+      syncContext.queueBookmarkSync(bookmark, deleted);
+    }
+  }, [syncContext]);
+
+  // Initial load from localStorage
   useEffect(() => {
     const storedBookmarks = getBookmarks();
     if (storedBookmarks.length > 0) {
@@ -270,11 +289,24 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       });
     }
     clearStalePreviews();
+    initialLoadDone.current = true;
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Refresh from localStorage when refreshKey changes (triggered after cloud pull)
+  useEffect(() => {
+    // Skip the initial render (refreshKey starts at 0)
+    if (!initialLoadDone.current || refreshKey === 0) return;
+    
+    const storedBookmarks = getBookmarks();
+    dispatch({
+      type: "IMPORT_BOOKMARKS_SUCCESS",
+      bookmarks: storedBookmarks,
+    });
+  }, [refreshKey]);
 
   const clearError = useCallback(() => {
     dispatch({ type: "CLEAR_ERROR" });
@@ -327,15 +359,21 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           bookmark: savedBookmark,
         });
         toast.success("Bookmark added");
+        
+        // Queue for sync
+        queueSync(savedBookmark);
       }, 0);
 
       return { success: true, bookmark: optimisticBookmark };
     },
-    [simulateError]
+    [simulateError, queueSync]
   );
 
   const deleteBookmark = useCallback(
     (id: string): DeleteBookmarkResult => {
+      // Capture bookmark data before delete for sync
+      const bookmarkToDelete = state.bookmarks.find((b) => b.id === id);
+      
       dispatch({ type: "DELETE_BOOKMARK", id });
 
       setTimeout(() => {
@@ -368,11 +406,16 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: "DELETE_BOOKMARK_SUCCESS", id });
         toast.success("Bookmark deleted");
+        
+        // Queue delete for sync
+        if (bookmarkToDelete) {
+          queueSync(bookmarkToDelete, true);
+        }
       }, 0);
 
       return { success: true };
     },
-    [simulateError]
+    [simulateError, state.bookmarks, queueSync]
   );
 
   const bulkDelete = useCallback(
@@ -382,6 +425,9 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           resolve({ success: true });
           return;
         }
+
+        // Capture bookmarks before delete for sync
+        const bookmarksToDelete = state.bookmarks.filter((b) => ids.includes(b.id));
 
         dispatch({ type: "BULK_DELETE_BOOKMARKS", ids });
 
@@ -419,10 +465,16 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
           dispatch({ type: "BULK_DELETE_BOOKMARKS_SUCCESS", ids });
           toast.success(`Deleted ${ids.length} bookmark${ids.length > 1 ? "s" : ""}`);
+          
+          // Queue deletes for sync
+          bookmarksToDelete.forEach((bookmark) => {
+            queueSync(bookmark, true);
+          });
+          
           resolve({ success: true });
         }, 0);
       }),
-    [simulateError]
+    [simulateError, state.bookmarks, queueSync]
   );
 
   const updateBookmark = useCallback(
@@ -449,11 +501,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
 
         dispatch({ type: "UPDATE_BOOKMARK_SUCCESS", bookmark: updated });
         toast.success("Bookmark updated");
+        
+        // Queue for sync
+        queueSync(updated);
       }, 0);
 
       return { success: true };
     },
-    [simulateError]
+    [simulateError, queueSync]
   );
 
   const importBookmarks = useCallback(
@@ -478,10 +533,16 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
           }
 
           dispatch({ type: "IMPORT_BOOKMARKS_SUCCESS", bookmarks });
+          
+          // Queue all imported bookmarks for sync
+          bookmarks.forEach((bookmark) => {
+            queueSync(bookmark);
+          });
+          
           resolve({ success: true });
         }, 0);
       }),
-    [simulateError]
+    [simulateError, queueSync]
   );
 
   const moveBookmarksToSpace = useCallback(
@@ -506,6 +567,14 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         }
 
         dispatch({ type: "IMPORT_BOOKMARKS_SUCCESS", bookmarks: updated });
+        
+        // Queue moved bookmarks for sync
+        const movedBookmarks = updated.filter((b) => b.spaceId === toSpaceId && 
+          state.bookmarks.find((orig) => orig.id === b.id)?.spaceId === fromSpaceId);
+        movedBookmarks.forEach((bookmark) => {
+          queueSync(bookmark);
+        });
+        
         return { success: true };
       } catch {
         const error = "Unable to update bookmarks.";
@@ -514,7 +583,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
         return { success: false, error };
       }
     },
-    [state.bookmarks]
+    [state.bookmarks, queueSync]
   );
 
   const fetchPreview = useCallback(

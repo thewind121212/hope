@@ -1,24 +1,28 @@
+"use client";
+
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { SyncModeToggle } from "@/components/settings/SyncModeToggle";
+import { useIncomingSync } from "@/hooks/useIncomingSync";
 
 export default function SettingsPage() {
+  useIncomingSync();
+
   return (
     <div className="max-w-2xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100">Settings</h1>
 
       <SettingsSection
-        title="Vault Mode"
-        description="End-to-end encrypt your bookmarks and sync across devices"
+        title="Cloud Sync"
+        description="Choose how your bookmarks are stored and synced"
       >
-        <div className="text-sm text-gray-500 italic">
-          Vault controls coming soon...
-        </div>
+        <SyncModeToggle />
       </SettingsSection>
 
       <SettingsSection
         title="Account"
         description="Manage your account settings"
       >
-        <div className="text-sm text-gray-500 italic">
+        <div className="text-sm text-gray-500 dark:text-slate-400 italic">
           Account controls coming soon...
         </div>
       </SettingsSection>

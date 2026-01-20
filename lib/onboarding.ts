@@ -1,4 +1,7 @@
 const ONBOARDING_KEY = 'bookmark-vault-onboarding-seen';
+const PENDING_MODE_KEY = 'bookmark-vault-pending-mode';
+
+export type OnboardingMode = 'local' | 'cloud' | 'e2e';
 
 /**
  * Check if the user has seen the onboarding
@@ -62,4 +65,45 @@ export function isFirstLaunch(): boolean {
   }
 
   return true;
+}
+
+/**
+ * Store pending mode choice before redirect to sign-in
+ * This allows us to continue setup after user signs in
+ */
+export function setPendingOnboardingMode(mode: OnboardingMode): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PENDING_MODE_KEY, mode);
+  } catch {
+    // Silently fail
+  }
+}
+
+/**
+ * Get pending mode choice (set before sign-in redirect)
+ */
+export function getPendingOnboardingMode(): OnboardingMode | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const mode = localStorage.getItem(PENDING_MODE_KEY);
+    if (mode === 'local' || mode === 'cloud' || mode === 'e2e') {
+      return mode;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Clear pending mode (after it's been processed)
+ */
+export function clearPendingOnboardingMode(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(PENDING_MODE_KEY);
+  } catch {
+    // Silently fail
+  }
 }

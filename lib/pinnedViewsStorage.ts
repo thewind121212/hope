@@ -32,7 +32,7 @@ function loadPinnedViews(): PinnedView[] {
   return safeParsePinnedViews(localStorage.getItem(PINNED_VIEWS_KEY));
 }
 
-function savePinnedViews(views: PinnedView[]): boolean {
+export function savePinnedViews(views: PinnedView[]): boolean {
   if (typeof window === "undefined") return false;
   try {
     localStorage.setItem(PINNED_VIEWS_KEY, JSON.stringify(views));

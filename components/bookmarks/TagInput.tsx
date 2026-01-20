@@ -81,21 +81,7 @@ export default function TagInput({
   };
 
   return (
-    <div className={cn("space-y-2", containerClassName)}>
-      <div className="flex flex-wrap gap-1">
-        {tags.map((tag) => (
-          <button
-            key={tag}
-            type="button"
-            onClick={() => removeTag(tag)}
-            aria-label={`Remove tag ${tag}`}
-            className="text-left"
-          >
-            <Badge tone="neutral">{tag} ✕</Badge>
-          </button>
-        ))}
-      </div>
-
+    <div className={cn("space-y-1", containerClassName)}>
       <div className="relative">
         <Input
           id={id}
@@ -142,9 +128,21 @@ export default function TagInput({
         )}
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        Press Enter or comma to add. Click a tag chip to remove.
-      </p>
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {tags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => removeTag(tag)}
+              aria-label={`Remove tag ${tag}`}
+              className="text-left"
+            >
+              <Badge tone="neutral">{tag} ✕</Badge>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useEffect } from "react";
+import { useAuth } from "@clerk/nextjs";
 import BookmarkFormModal from "@/components/bookmarks/BookmarkFormModal";
 import ImportExportModal from "@/components/bookmarks/ImportExportModal";
 import BookmarkList from "@/components/BookmarkList";
@@ -15,8 +16,12 @@ import { runSpacesMigration } from "@/lib/spacesMigration";
 import { getSpaces } from "@/lib/spacesStorage";
 import SpacesSidebar, { type SpaceSelection } from "@/components/spaces/SpacesSidebar";
 import { useUiStore } from "@/stores/useUiStore";
+import { useVaultStore } from "@/stores/vault-store";
+import { UnlockScreen } from "@/components/vault/UnlockScreen";
 
 export default function Home() {
+  const { isLoaded, isSignedIn } = useAuth();
+  
   // Read from store
   const selectedSpaceId = useUiStore((s) => s.selectedSpaceId);
   const searchQuery = useUiStore((s) => s.searchQuery);
@@ -35,6 +40,9 @@ export default function Home() {
   const applyPinnedView = useUiStore((s) => s.applyPinnedView);
   const setSelectedSpaceId = useUiStore((s) => s.setSelectedSpaceId);
   const closeSpaces = useUiStore((s) => s.closeSpaces);
+
+  // Vault state
+  const { vaultEnvelope, isUnlocked, currentUserId } = useVaultStore();
 
   // Local refs (not in store)
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -58,6 +66,24 @@ export default function Home() {
     const match = getSpaces().find((space) => space.id === selectedSpaceId);
     return match?.name ?? "Space";
   }, [selectedSpaceId]);
+
+  // Loading state - wait for auth and vault initialization
+  if (!isLoaded) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-pulse text-slate-500">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show unlock screen ONLY if:
+  // 1. User is signed in
+  // 2. Vault is initialized for this user (currentUserId is set)
+  // 3. User has an envelope (E2E is enabled)
+  // 4. Vault is not yet unlocked
+  if (isSignedIn && currentUserId && vaultEnvelope && !isUnlocked) {
+    return <UnlockScreen />;
+  }
 
   return (
     <ErrorBoundary>
