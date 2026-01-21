@@ -13,6 +13,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { toast } from 'sonner';
 import { useSyncSettingsStore } from '@/stores/sync-settings-store';
 import { useVaultStore } from '@/stores/vault-store';
 import { useSyncEngine } from '@/hooks/useSyncEngineUnified';
@@ -120,8 +121,11 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
     // Check checksum before pulling (optimized startup)
     syncEngine.checkAndSync()
-      .then(({ skipped }) => {
+      .then(({ pulled, skipped }) => {
         setChecksumMatched(skipped);
+        if (pulled > 0) {
+          toast.success('Up to date from cloud');
+        }
       })
       .catch(console.error);
   }, [isSignedIn, isLoaded, syncEngine.canSync, migration.status, syncEngine.checkAndSync]);
