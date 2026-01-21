@@ -364,3 +364,93 @@ export function clearAllEncryptedStorage(): void {
   localStorage.removeItem(ENCRYPTED_PINNED_VIEWS_KEY);
   localStorage.removeItem(PULLED_CIPHERTEXT_KEY);
 }
+
+/**
+ * Encrypts data and returns it in the server-expected format.
+ * Server expects ciphertext as base64 of [iv (12 bytes)][ciphertext][tag (16 bytes)].
+ * Also saves to local encrypted storage.
+ * 
+ * @returns Object with recordId, combinedCiphertext (for server), and version
+ */
+export async function encryptForSync<T extends { id: string; createdAt: string }>(
+  data: T,
+  recordType: RecordType,
+  vaultKey: Uint8Array
+): Promise<{ recordId: string; ciphertext: string; version: number }> {
+  const encryptionKey = await crypto.importVaultKey(vaultKey);
+  const plaintext = new TextEncoder().encode(JSON.stringify(data));
+  const encrypted = await crypto.encryptData(plaintext, encryptionKey);
+
+  // Get existing version
+  const existing = loadAllEncryptedRecords(recordType);
+  const existingRecord = existing.find((r) => r.recordId === data.id);
+  const version = existingRecord ? existingRecord.version : 0;
+
+  // Save to local encrypted storage
+  const localRecord: StoredEncryptedRecord = {
+    recordId: data.id,
+    recordType,
+    ciphertext: crypto.arrayToBase64(encrypted.ciphertext),
+    iv: crypto.arrayToBase64(encrypted.iv),
+    tag: crypto.arrayToBase64(encrypted.tag),
+    version: version + 1,
+    deleted: false,
+    createdAt: data.createdAt,
+    updatedAt: new Date().toISOString(),
+  };
+  saveEncryptedRecord(localRecord);
+
+  // Create combined format for server: [iv][ciphertext][tag]
+  const combined = new Uint8Array(
+    encrypted.iv.length + encrypted.ciphertext.length + encrypted.tag.length
+  );
+  combined.set(encrypted.iv, 0);
+  combined.set(encrypted.ciphertext, encrypted.iv.length);
+  combined.set(encrypted.tag, encrypted.iv.length + encrypted.ciphertext.length);
+
+  return {
+    recordId: data.id,
+    ciphertext: crypto.arrayToBase64(combined),
+    version,
+  };
+}
+
+/**
+ * Marks a record as deleted in local encrypted storage and returns
+ * the ciphertext needed for sync (we still need to push a delete marker).
+ */
+export async function markDeletedForSync(
+  recordId: string,
+  recordType: RecordType,
+  vaultKey: Uint8Array
+): Promise<{ recordId: string; ciphertext: string; version: number } | null> {
+  const records = loadAllEncryptedRecords(recordType);
+  const existing = records.find((r) => r.recordId === recordId);
+  
+  if (!existing) {
+    // Record doesn't exist in encrypted storage, nothing to delete
+    return null;
+  }
+
+  // Mark as deleted locally
+  existing.deleted = true;
+  existing.updatedAt = new Date().toISOString();
+  saveEncryptedRecord(existing);
+
+  // For delete operations, we send the existing ciphertext with deleted=true
+  // Reconstruct the combined format from stored parts
+  const ivBytes = crypto.base64ToArray(existing.iv);
+  const ciphertextBytes = crypto.base64ToArray(existing.ciphertext);
+  const tagBytes = crypto.base64ToArray(existing.tag);
+
+  const combined = new Uint8Array(ivBytes.length + ciphertextBytes.length + tagBytes.length);
+  combined.set(ivBytes, 0);
+  combined.set(ciphertextBytes, ivBytes.length);
+  combined.set(tagBytes, ivBytes.length + ciphertextBytes.length);
+
+  return {
+    recordId,
+    ciphertext: crypto.arrayToBase64(combined),
+    version: existing.version,
+  };
+}

@@ -22,6 +22,7 @@ import {
   queueOperation as queueEncryptedOperation,
   getPendingCount as getEncryptedPendingCount,
 } from '@/lib/sync-engine';
+import { clearOutbox as clearEncryptedOutbox } from '@/lib/sync-outbox';
 import {
   pushPlaintext,
   pullAllPlaintext,
@@ -93,9 +94,9 @@ interface UseSyncEngineReturn extends SyncState {
   syncFull: () => Promise<{ pushed: number; pulled: number }>;
   checkAndSync: () => Promise<{ pulled: number; skipped: boolean }>;
 
-  queueBookmark: (bookmark: Bookmark, version: number, deleted?: boolean) => void;
-  queueSpace: (space: Space, version: number, deleted?: boolean) => void;
-  queuePinnedView: (view: PinnedView, version: number, deleted?: boolean) => void;
+  queueBookmark: (bookmark: Bookmark, version: number, deleted?: boolean) => Promise<void>;
+  queueSpace: (space: Space, version: number, deleted?: boolean) => Promise<void>;
+  queuePinnedView: (view: PinnedView, version: number, deleted?: boolean) => Promise<void>;
 
   clearPending: () => void;
   refreshPendingCount: () => void;
@@ -287,7 +288,9 @@ export function useSyncEngine(): UseSyncEngineReturn {
       let result: SyncPushResult;
 
       if (syncMode === 'e2e') {
+        console.log('[e2e-sync] syncPush: starting encrypted push');
         const encResult = await encryptedPush();
+        console.log('[e2e-sync] syncPush: encrypted push result', encResult);
         result = {
           success: encResult.success,
           synced: encResult.pushed,
@@ -303,8 +306,11 @@ export function useSyncEngine(): UseSyncEngineReturn {
         result = await pushPlaintext();
       }
 
-      if (result.success && result.synced > 0 && result.results) {
-        updateLocalSyncVersions(result.results);
+      if (result.success && result.synced > 0) {
+        // Update local sync versions for plaintext mode (has results)
+        if (result.results) {
+          updateLocalSyncVersions(result.results);
+        }
         toast.success('Synced to cloud');
       }
 
@@ -465,36 +471,136 @@ export function useSyncEngine(): UseSyncEngineReturn {
   }, [syncPush, syncPull, applyPulledRecords]);
 
   // === QUEUE OPERATIONS ===
-  const queueBookmark = useCallback((bookmark: Bookmark, version: number, deleted: boolean = false) => {
+  const queueBookmark = useCallback(async (bookmark: Bookmark, version: number, deleted: boolean = false) => {
     if (!canSync()) return;
+    
     if (syncMode === 'plaintext') {
       if (blockedDialogOpen) return;
       queuePlaintextOperation(bookmark.id, 'bookmark', bookmark, version, deleted);
       refreshPendingCount();
+    } else if (syncMode === 'e2e' && vaultKey) {
+      // E2E mode: encrypt and queue
+      console.log('[e2e-sync] queueBookmark called', { bookmarkId: bookmark.id, deleted });
+      try {
+        const { encryptForSync, markDeletedForSync } = await import('@/lib/encrypted-storage');
+        
+        if (deleted) {
+          const result = await markDeletedForSync(bookmark.id, 'bookmark', vaultKey);
+          if (result) {
+            console.log('[e2e-sync] markDeletedForSync result', result.recordId);
+            queueEncryptedOperation({
+              recordId: result.recordId,
+              recordType: 'bookmark',
+              baseVersion: result.version,
+              ciphertext: result.ciphertext,
+              deleted: true,
+            });
+            console.log('[e2e-sync] Queued deleted bookmark to outbox');
+          }
+        } else {
+          const result = await encryptForSync(bookmark, 'bookmark', vaultKey);
+          console.log('[e2e-sync] encryptForSync result', result.recordId);
+          queueEncryptedOperation({
+            recordId: result.recordId,
+            recordType: 'bookmark',
+            baseVersion: result.version,
+            ciphertext: result.ciphertext,
+            deleted: false,
+          });
+          console.log('[e2e-sync] Queued encrypted bookmark to outbox');
+        }
+        refreshPendingCount();
+      } catch (error) {
+        console.error('[e2e-sync] Failed to encrypt bookmark for sync:', error);
+      }
     }
-  }, [canSync, syncMode, refreshPendingCount, blockedDialogOpen]);
+  }, [canSync, syncMode, refreshPendingCount, blockedDialogOpen, vaultKey]);
 
-  const queueSpace = useCallback((space: Space, version: number, deleted: boolean = false) => {
+  const queueSpace = useCallback(async (space: Space, version: number, deleted: boolean = false) => {
     if (!canSync()) return;
+    
     if (syncMode === 'plaintext') {
       if (blockedDialogOpen) return;
       queuePlaintextOperation(space.id, 'space', space, version, deleted);
       refreshPendingCount();
+    } else if (syncMode === 'e2e' && vaultKey) {
+      // E2E mode: encrypt and queue
+      try {
+        const { encryptForSync, markDeletedForSync } = await import('@/lib/encrypted-storage');
+        
+        if (deleted) {
+          const result = await markDeletedForSync(space.id, 'space', vaultKey);
+          if (result) {
+            queueEncryptedOperation({
+              recordId: result.recordId,
+              recordType: 'space',
+              baseVersion: result.version,
+              ciphertext: result.ciphertext,
+              deleted: true,
+            });
+          }
+        } else {
+          const result = await encryptForSync(space, 'space', vaultKey);
+          queueEncryptedOperation({
+            recordId: result.recordId,
+            recordType: 'space',
+            baseVersion: result.version,
+            ciphertext: result.ciphertext,
+            deleted: false,
+          });
+        }
+        refreshPendingCount();
+      } catch (error) {
+        console.error('[e2e-sync] Failed to encrypt space for sync:', error);
+      }
     }
-  }, [canSync, syncMode, refreshPendingCount, blockedDialogOpen]);
+  }, [canSync, syncMode, refreshPendingCount, blockedDialogOpen, vaultKey]);
 
-  const queuePinnedView = useCallback((view: PinnedView, version: number, deleted: boolean = false) => {
+  const queuePinnedView = useCallback(async (view: PinnedView, version: number, deleted: boolean = false) => {
     if (!canSync()) return;
+    
     if (syncMode === 'plaintext') {
       if (blockedDialogOpen) return;
       queuePlaintextOperation(view.id, 'pinned-view', view, version, deleted);
       refreshPendingCount();
+    } else if (syncMode === 'e2e' && vaultKey) {
+      // E2E mode: encrypt and queue
+      try {
+        const { encryptForSync, markDeletedForSync } = await import('@/lib/encrypted-storage');
+        
+        if (deleted) {
+          const result = await markDeletedForSync(view.id, 'pinned-view', vaultKey);
+          if (result) {
+            queueEncryptedOperation({
+              recordId: result.recordId,
+              recordType: 'pinned-view',
+              baseVersion: result.version,
+              ciphertext: result.ciphertext,
+              deleted: true,
+            });
+          }
+        } else {
+          const result = await encryptForSync(view, 'pinned-view', vaultKey);
+          queueEncryptedOperation({
+            recordId: result.recordId,
+            recordType: 'pinned-view',
+            baseVersion: result.version,
+            ciphertext: result.ciphertext,
+            deleted: false,
+          });
+        }
+        refreshPendingCount();
+      } catch (error) {
+        console.error('[e2e-sync] Failed to encrypt pinned view for sync:', error);
+      }
     }
-  }, [canSync, syncMode, refreshPendingCount, blockedDialogOpen]);
+  }, [canSync, syncMode, refreshPendingCount, blockedDialogOpen, vaultKey]);
 
   const clearPending = useCallback(() => {
     if (syncMode === 'plaintext') {
       clearPlaintextOutbox();
+    } else if (syncMode === 'e2e') {
+      clearEncryptedOutbox();
     }
     refreshPendingCount();
   }, [syncMode, refreshPendingCount]);

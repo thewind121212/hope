@@ -94,6 +94,7 @@ async function processOutboxItem(op: SyncOperation): Promise<void> {
 
 export async function syncPush(): Promise<SyncResult> {
   const outbox = getOutbox();
+  console.log('[e2e-sync] syncPush: outbox has', outbox.length, 'items');
   if (outbox.length === 0) {
     return { success: true, pushed: 0, conflicts: [] };
   }

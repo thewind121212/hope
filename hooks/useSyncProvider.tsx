@@ -167,6 +167,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
   // Debounced auto-sync after queuing operations
   const triggerDebouncedSync = useCallback(() => {
+    console.log('[sync] triggerDebouncedSync called, canSync:', syncEngine.canSync, 'isOnline:', isOnline);
     if (!syncEngine.canSync || !isOnline) return;
 
     // Clear existing timeout
@@ -175,26 +176,31 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Schedule sync
+    console.log('[sync] Scheduling sync in', SYNC_DEBOUNCE_MS, 'ms');
     syncTimeoutRef.current = setTimeout(() => {
+      console.log('[sync] Executing debounced syncPush');
       syncEngine.syncPush().catch(console.error);
     }, SYNC_DEBOUNCE_MS);
   }, [syncEngine.canSync, isOnline, syncEngine.syncPush]);
 
   // Queue bookmark for sync
   const queueBookmarkSync = useCallback((bookmark: Bookmark, deleted: boolean = false) => {
-    syncEngine.queueBookmark(bookmark, bookmark._syncVersion ?? 0, deleted);
+    // Queue is async but we don't await - it's fire-and-forget
+    syncEngine.queueBookmark(bookmark, bookmark._syncVersion ?? 0, deleted).catch(console.error);
     triggerDebouncedSync();
   }, [syncEngine, triggerDebouncedSync]);
 
   // Queue space for sync
   const queueSpaceSync = useCallback((space: Space, deleted: boolean = false) => {
-    syncEngine.queueSpace(space, space._syncVersion ?? 0, deleted);
+    // Queue is async but we don't await - it's fire-and-forget
+    syncEngine.queueSpace(space, space._syncVersion ?? 0, deleted).catch(console.error);
     triggerDebouncedSync();
   }, [syncEngine, triggerDebouncedSync]);
 
   // Queue pinned view for sync
   const queuePinnedViewSync = useCallback((view: PinnedView, deleted: boolean = false) => {
-    syncEngine.queuePinnedView(view, view._syncVersion ?? 0, deleted);
+    // Queue is async but we don't await - it's fire-and-forget
+    syncEngine.queuePinnedView(view, view._syncVersion ?? 0, deleted).catch(console.error);
     triggerDebouncedSync();
   }, [syncEngine, triggerDebouncedSync]);
 
