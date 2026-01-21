@@ -186,8 +186,11 @@ export function SyncModeToggle() {
     return date.toLocaleDateString();
   };
 
-  // Loading state
-  if (!authLoaded || settingsLoading) {
+  // Loading state - but DON'T show skeleton if modal is open (prevents modal from unmounting)
+  // When EnableVaultModal is open and enableVault() calls saveToServer(), settingsLoading becomes true.
+  // If we show the skeleton, the entire SyncModeToggle component re-renders without the modal,
+  // causing EnableVaultModal to unmount and lose its progress state.
+  if ((!authLoaded || settingsLoading) && !showEnableModal && !showDisableDialog) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 py-2">

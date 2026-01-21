@@ -17,6 +17,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
+    // IMPORTANT: wrappedKey and salt arrive as base64 strings from the client.
+    // We must decode them to binary (Buffer) before storing in Postgres BYTEA columns.
+    // Otherwise, Postgres stores the UTF-8 bytes of the base64 string, causing double-encoding.
+    const wrappedKeyBinary = Buffer.from(wrappedKey, 'base64');
+    const saltBinary = Buffer.from(salt, 'base64');
+
     const result = await query(
       `INSERT INTO vaults (user_id, wrapped_key, salt, kdf_params)
        VALUES ($1, $2, $3, $4)
@@ -27,7 +33,7 @@ export async function POST(req: Request) {
          kdf_params = EXCLUDED.kdf_params,
          updated_at = NOW()
        RETURNING id`,
-      [userId, wrappedKey, salt, JSON.stringify(kdfParams)]
+      [userId, wrappedKeyBinary, saltBinary, JSON.stringify(kdfParams)]
     );
 
     return NextResponse.json({

@@ -112,6 +112,16 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
         }
       );
 
+      console.log('[vault-enable] Encrypted records created:', {
+        total: encryptedRecords.length,
+        byType: {
+          bookmarks: encryptedRecords.filter(r => r.recordType === 'bookmark').length,
+          spaces: encryptedRecords.filter(r => r.recordType === 'space').length,
+          pinnedViews: encryptedRecords.filter(r => r.recordType === 'pinned-view').length,
+        },
+        recordTypes: encryptedRecords.map(r => ({ id: r.recordId, type: r.recordType })),
+      });
+
       // Phase 3: Enable vault on server
       const response = await fetch('/api/vault/enable', {
         method: 'POST',
@@ -248,7 +258,7 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
       
       const errorMessage = error instanceof Error ? error.message : 'Failed to enable vault';
       setProgress({ phase: 'error', error: errorMessage });
-      throw error;
+      // Don't re-throw - the progress state will show the error to the user
     } finally {
       setIsEnabling(false);
     }

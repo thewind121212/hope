@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Modal, Input, Button } from '@/components/ui';
 import { useVaultEnable, type VaultEnableProgress, type DataCounts } from '@/hooks/useVaultEnable';
+import { useVaultStore } from '@/stores/vault-store';
 import {
   Shield,
   Key,
@@ -40,6 +41,9 @@ export function EnableVaultModal({ isOpen, onClose, onComplete }: EnableVaultMod
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null);
   const [dataCounts, setDataCounts] = useState<DataCounts | null>(null);
   
+  // Track if enable process has started - persists across re-renders
+  const enableStartedRef = useRef(false);
+  
   const { enableVault, isEnabling, progress, resetProgress, getDataCounts } = useVaultEnable({
     deletePlaintextCloudAfterEnable: false,
   });
@@ -51,9 +55,9 @@ export function EnableVaultModal({ isOpen, onClose, onComplete }: EnableVaultMod
     }
   }, [isOpen, getDataCounts]);
 
-  // Reset state when modal closes
+  // Reset state when modal closes - but NOT if enable process has started
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen && !enableStartedRef.current) {
       setPassphrase('');
       setConfirmPassphrase('');
       setShowPassphrase(false);
@@ -114,10 +118,13 @@ export function EnableVaultModal({ isOpen, onClose, onComplete }: EnableVaultMod
       return;
     }
 
+    // Mark that enable process has started - prevents reset on re-renders
+    enableStartedRef.current = true;
+
     try {
       await enableVault(passphrase);
       setLocalComplete(true);
-      onComplete();
+      // Don't call onComplete() - let user see progress and click "Done" to reload
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to enable vault. Please try again.';
       setError(errorMessage);
@@ -125,7 +132,28 @@ export function EnableVaultModal({ isOpen, onClose, onComplete }: EnableVaultMod
   };
 
   const handleClose = () => {
+    // Don't allow closing while enable is in progress
+    if (enableStartedRef.current && progress && progress.phase !== 'complete' && progress.phase !== 'error') {
+      return;
+    }
+    enableStartedRef.current = false;
     onClose();
+  };
+
+  // Handle Done button - clear session and hard reload to force unlock flow
+  const handleDone = () => {
+    if (progress?.phase === 'complete') {
+      // Reset the ref before reload
+      enableStartedRef.current = false;
+      // Clear vault session so user must unlock with passphrase after reload
+      const { clearSession } = useVaultStore.getState();
+      clearSession();
+      window.location.reload();
+    } else {
+      // On error, reset the ref and close the modal so user can retry
+      enableStartedRef.current = false;
+      onClose();
+    }
   };
 
   // Show progress UI while we have progress state
@@ -143,8 +171,8 @@ export function EnableVaultModal({ isOpen, onClose, onComplete }: EnableVaultMod
 
           {(progress.phase === 'complete' || progress.phase === 'error') && (
             <div className="flex justify-end">
-              <Button type="button" onClick={handleClose}>
-                Done
+              <Button type="button" onClick={handleDone}>
+                {progress.phase === 'complete' ? 'Done' : 'Close'}
               </Button>
             </div>
           )}
@@ -486,9 +514,12 @@ function ProgressPhase({
         </div>
       )}
 
-      <p className="text-xs text-center text-slate-500 dark:text-slate-400">
-        Please don&apos;t close this window...
-      </p>
+      {/* Only show "don't close" message during in-progress phases */}
+      {phase !== 'complete' && phase !== 'error' && (
+        <p className="text-xs text-center text-slate-500 dark:text-slate-400">
+          Please don&apos;t close this window...
+        </p>
+      )}
     </div>
   );
 }
