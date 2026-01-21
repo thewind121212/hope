@@ -6,10 +6,16 @@ import type { RecordType } from '@/lib/types';
 export async function GET(req: NextRequest) {
   const authResult = await auth();
   const userId = authResult.userId;
-  
+
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // Set cache-busting headers
+  const headers = new Headers();
+  headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  headers.set('Pragma', 'no-cache');
+  headers.set('Expires', '0');
 
   const { searchParams } = new URL(req.url);
   const cursor = searchParams.get('cursor');
@@ -61,7 +67,7 @@ export async function GET(req: NextRequest) {
       })),
       nextCursor,
       hasMore,
-    });
+    }, { headers });
   } catch (error) {
     console.error('Plaintext sync pull error:', error);
     return NextResponse.json({ error: 'Sync failed' }, { status: 500 });

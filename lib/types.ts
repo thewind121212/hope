@@ -14,6 +14,7 @@ export interface Space {
   name: string;
   color?: string;
   createdAt: string;
+  updatedAt?: string;  // Track server update time for checksum
   _syncVersion?: number;
 }
 
@@ -25,6 +26,7 @@ export interface PinnedView {
   tag: string;
   sortKey: "newest" | "oldest" | "title";
   createdAt: string;
+  updatedAt?: string;  // Track server update time for checksum
   _syncVersion?: number;
 }
 
@@ -37,6 +39,7 @@ export interface Bookmark {
   color?: BookmarkColor;
   createdAt: string;
   spaceId?: string;
+  updatedAt?: string;  // Track server update time for checksum
   preview?: {
     faviconUrl: string | null;
     siteName: string | null;
@@ -119,7 +122,7 @@ export interface SyncPushResult {
   synced: number;
   conflicts: SyncConflict[];
   errors: string[];
-  results?: { recordId: string; version: number }[];
+  results?: { recordId: string; version: number; updatedAt: string }[];
   checksum?: string;
   checksumMeta?: {
     count: number;

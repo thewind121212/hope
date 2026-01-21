@@ -23,6 +23,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Set cache-busting headers
+  const headers = new Headers();
+  headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+  headers.set('Pragma', 'no-cache');
+  headers.set('Expires', '0');
+
   try {
     // Fetch all non-encrypted, non-deleted records for user
     const records = await query(
@@ -60,6 +66,14 @@ export async function GET() {
     const spacesCount = records.filter((r) => r.record_type === 'space').length;
     const pinnedViewsCount = records.filter((r) => r.record_type === 'pinned-view').length;
 
+    // DEBUG: Log server-side hash calculation details (after lastUpdate is calculated)
+    console.log('🔴 SERVER CHECKSUM DEBUG:');
+    console.log('  Records count:', plaintextRecords.length);
+    console.log('  Records (JSON):', JSON.stringify(plaintextRecords, null, 2));
+    console.log('  Calculated checksum:', checksum);
+    console.log('  lastUpdate:', lastUpdate?.toISOString() ?? null);
+    console.log('---');
+
     return NextResponse.json({
       checksum,
       count,
@@ -69,7 +83,7 @@ export async function GET() {
         spaces: spacesCount,
         pinnedViews: pinnedViewsCount,
       },
-    });
+    }, { headers });
   } catch (error) {
     console.error('Checksum fetch error:', error);
     return NextResponse.json({ error: 'Failed to fetch checksum' }, { status: 500 });

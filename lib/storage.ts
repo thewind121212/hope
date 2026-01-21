@@ -6,13 +6,21 @@ const STORAGE_KEY = 'bookmark-vault-bookmarks';
 const STORAGE_VERSION = 1;
 const PREVIEW_CACHE_KEY = 'bookmark-vault-previews';
 const PREVIEW_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
-const CHECKSUM_KEY = 'bookmark-vault-checksum';
 const CHECKSUM_META_KEY = 'bookmark-vault-checksum-meta';
 
 type StoredBookmarks = {
   version: number;
   data: Bookmark[];
 };
+
+// One-time cleanup: remove old redundant checksum key
+if (typeof window !== 'undefined') {
+  try {
+    localStorage.removeItem('bookmark-vault-checksum');
+  } catch {
+    // Ignore
+  }
+}
 
 const parseBookmarks = (raw: string | null): Bookmark[] => {
   if (!raw) return [];
@@ -59,12 +67,14 @@ export function getBookmarks(): Bookmark[] {
 }
 
 export function addBookmark(
-  bookmark: Omit<Bookmark, 'id' | 'createdAt'>
+  bookmark: Omit<Bookmark, 'id' | 'createdAt' | 'updatedAt'>
 ): Bookmark {
+  const now = new Date().toISOString();
   const newBookmark: Bookmark = {
     ...bookmark,
     id: uuidv4(),
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,  // Set updatedAt for new bookmarks
   };
 
   const bookmarks = loadBookmarks();
@@ -212,15 +222,6 @@ export interface ChecksumMeta {
   };
 }
 
-export function getStoredChecksum(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(CHECKSUM_KEY);
-  } catch {
-    return null;
-  }
-}
-
 export function getStoredChecksumMeta(): ChecksumMeta | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -235,7 +236,6 @@ export function getStoredChecksumMeta(): ChecksumMeta | null {
 export function saveChecksumMeta(meta: ChecksumMeta): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    localStorage.setItem(CHECKSUM_KEY, meta.checksum);
     localStorage.setItem(CHECKSUM_META_KEY, JSON.stringify(meta));
     return true;
   } catch {
@@ -245,8 +245,9 @@ export function saveChecksumMeta(meta: ChecksumMeta): boolean {
 
 export function clearChecksum(): void {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(CHECKSUM_KEY);
   localStorage.removeItem(CHECKSUM_META_KEY);
+  // Also clean up old redundant key if it exists
+  localStorage.removeItem('bookmark-vault-checksum');
 }
 
 /**
@@ -273,11 +274,22 @@ export async function recalculateAndSaveChecksum(): Promise<void> {
       pinnedViews
     );
 
+    // Calculate the maximum updatedAt from all records (for proper sync comparison)
+    const allRecords = [
+      ...bookmarks.map(b => b.updatedAt),
+      ...spaces.map(s => s.updatedAt),
+      ...pinnedViews.map(v => v.updatedAt),
+    ].filter((dt): dt is string => dt !== undefined);
+
+    const maxUpdatedAt = allRecords.length > 0
+      ? new Date(Math.max(...allRecords.map(d => new Date(d).getTime()))).toISOString()
+      : new Date().toISOString();
+
     // Save checksum metadata
     saveChecksumMeta({
       checksum,
       count: bookmarks.length + spaces.length + pinnedViews.length,
-      lastUpdate: new Date().toISOString(),
+      lastUpdate: maxUpdatedAt,  // Use actual max record updatedAt, not now()
       perTypeCounts: {
         bookmarks: bookmarks.length,
         spaces: spaces.length,

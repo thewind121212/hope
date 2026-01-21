@@ -13,12 +13,12 @@ import type { PlaintextRecord } from './types';
  * Sorts records by recordId for deterministic hashing.
  *
  * @param records - Array of plaintext records to hash
- * @returns MD5 hash as hex string
+ * @returns SHA-256 hash as hex string
  */
 export function calculateChecksum(records: PlaintextRecord[]): string {
   if (records.length === 0) {
     // Empty data has a consistent hash
-    return createHash('md5').update('[]').digest('hex');
+    return createHash('sha256').update('[]').digest('hex');
   }
 
   // Sort by recordId for deterministic ordering
@@ -40,8 +40,8 @@ export function calculateChecksum(records: PlaintextRecord[]): string {
     return value;
   });
 
-  // Compute MD5 hash
-  return createHash('md5').update(dataString).digest('hex');
+  // Compute SHA-256 hash (matches client-side)
+  return createHash('sha256').update(dataString).digest('hex');
 }
 
 /**
@@ -107,23 +107,45 @@ export async function calculateCombinedChecksum(
   spaces: unknown[],
   pinnedViews: unknown[]
 ): Promise<string> {
+  const now = new Date().toISOString();
+
   const allRecords = [
-    ...bookmarks.map((data, index) => ({
-      recordId: `bookmark-${index}`,
+    ...bookmarks.map((data) => ({
+      recordId: (data as { id: string }).id,
       recordType: 'bookmark' as const,
       data,
+      version: (data as { _syncVersion?: number })._syncVersion ?? 0,
+      deleted: false,
+      updatedAt: (data as { updatedAt?: string }).updatedAt ?? now,
     })),
-    ...spaces.map((data, index) => ({
-      recordId: `space-${index}`,
+    ...spaces.map((data) => ({
+      recordId: (data as { id: string }).id,
       recordType: 'space' as const,
       data,
+      version: (data as { _syncVersion?: number })._syncVersion ?? 0,
+      deleted: false,
+      updatedAt: (data as { updatedAt?: string }).updatedAt ?? now,
     })),
-    ...pinnedViews.map((data, index) => ({
-      recordId: `pinned-view-${index}`,
+    ...pinnedViews.map((data) => ({
+      recordId: (data as { id: string }).id,
       recordType: 'pinned-view' as const,
       data,
+      version: (data as { _syncVersion?: number })._syncVersion ?? 0,
+      deleted: false,
+      updatedAt: (data as { updatedAt?: string }).updatedAt ?? now,
     })),
   ];
 
-  return calculateChecksumClient(allRecords as PlaintextRecord[]);
+  // DEBUG: Log client-side hash calculation details
+  console.log('🟢 CLIENT CHECKSUM DEBUG:');
+  console.log('  Bookmarks:', bookmarks.length);
+  console.log('  Spaces:', spaces.length);
+  console.log('  PinnedViews:', pinnedViews.length);
+  console.log('  Records (JSON):', JSON.stringify(allRecords, null, 2));
+
+  const checksum = await calculateChecksumClient(allRecords as PlaintextRecord[]);
+  console.log('  Calculated checksum:', checksum);
+  console.log('---');
+
+  return checksum;
 }

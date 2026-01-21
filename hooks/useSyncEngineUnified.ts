@@ -5,19 +5,19 @@ import { toast } from 'sonner';
 import { useSyncSettingsStore } from '@/stores/sync-settings-store';
 import { useVaultStore } from '@/stores/vault-store';
 import { useDataRefreshStore } from '@/stores/data-refresh-store';
-import type { 
-  Bookmark, 
-  Space, 
-  PinnedView, 
+import type {
+  Bookmark,
+  Space,
+  PinnedView,
   RecordType,
   SyncPushResult,
   PlaintextRecord,
 } from '@/lib/types';
 
-// Import both sync engines
-import { 
-  syncPush as encryptedPush, 
-  syncPull as encryptedPull, 
+// Import sync engines
+import {
+  syncPush as encryptedPush,
+  syncPull as encryptedPull,
   queueOperation as queueEncryptedOperation,
   getPendingCount as getEncryptedPendingCount,
 } from '@/lib/sync-engine';
@@ -31,14 +31,13 @@ import {
 import { getBookmarks, setBookmarks, getStoredChecksumMeta, saveChecksumMeta, type ChecksumMeta } from '@/lib/storage';
 import { getSpaces, setSpaces } from '@/lib/spacesStorage';
 import { getPinnedViews, savePinnedViews } from '@/lib/pinnedViewsStorage';
-import { calculateCombinedChecksum } from '@/lib/checksum';
 
-// Helper to update local _syncVersion after successful push
-function updateLocalSyncVersions(results: { recordId: string; version: number }[]): void {
+// Helper to update local _syncVersion and updatedAt after successful push
+function updateLocalSyncVersions(results: { recordId: string; version: number; updatedAt: string }[]): void {
   if (!results || results.length === 0) return;
 
-  // Create a map for quick lookup
   const versionMap = new Map(results.map(r => [r.recordId, r.version]));
+  const updatedAtMap = new Map(results.map(r => [r.recordId, r.updatedAt]));
 
   // Update bookmarks
   const bookmarks = getBookmarks();
@@ -47,6 +46,7 @@ function updateLocalSyncVersions(results: { recordId: string; version: number }[
     const newVersion = versionMap.get(bookmark.id);
     if (newVersion !== undefined) {
       bookmark._syncVersion = newVersion;
+      bookmark.updatedAt = updatedAtMap.get(bookmark.id)!;
       bookmarksUpdated = true;
     }
   }
@@ -59,6 +59,7 @@ function updateLocalSyncVersions(results: { recordId: string; version: number }[
     const newVersion = versionMap.get(space.id);
     if (newVersion !== undefined) {
       space._syncVersion = newVersion;
+      space.updatedAt = updatedAtMap.get(space.id)!;
       spacesUpdated = true;
     }
   }
@@ -71,6 +72,7 @@ function updateLocalSyncVersions(results: { recordId: string; version: number }[
     const newVersion = versionMap.get(view.id);
     if (newVersion !== undefined) {
       view._syncVersion = newVersion;
+      view.updatedAt = updatedAtMap.get(view.id)!;
       viewsUpdated = true;
     }
   }
@@ -82,22 +84,18 @@ interface SyncState {
   pendingCount: number;
   lastSync: Date | null;
   error: string | null;
-  progress: number; // 0-100
 }
 
 interface UseSyncEngineReturn extends SyncState {
-  // Core sync methods
   syncPush: () => Promise<SyncPushResult>;
   syncPull: () => Promise<PlaintextRecord[]>;
   syncFull: () => Promise<{ pushed: number; pulled: number }>;
   checkAndSync: () => Promise<{ pulled: number; skipped: boolean }>;
 
-  // Queue operations
   queueBookmark: (bookmark: Bookmark, version: number, deleted?: boolean) => void;
   queueSpace: (space: Space, version: number, deleted?: boolean) => void;
   queuePinnedView: (view: PinnedView, version: number, deleted?: boolean) => void;
 
-  // Utils
   clearPending: () => void;
   refreshPendingCount: () => void;
   canSync: boolean;
@@ -109,27 +107,26 @@ export function useSyncEngine(): UseSyncEngineReturn {
     pendingCount: 0,
     lastSync: null,
     error: null,
-    progress: 0,
   });
 
   const { syncMode, syncEnabled, setLastSyncAt } = useSyncSettingsStore();
   const { isUnlocked, vaultEnvelope, vaultKey } = useVaultStore();
   const { triggerRefresh } = useDataRefreshStore();
-  
-  // Ref to track if sync is in progress (prevents concurrent syncs)
+
   const syncInProgressRef = useRef(false);
 
-  // Can sync check
   const canSync = useCallback(() => {
     if (!syncEnabled || syncMode === 'off') return false;
     if (syncMode === 'e2e') {
       return isUnlocked && vaultEnvelope !== null && vaultKey !== null;
     }
-    return true; // Plaintext mode just needs to be enabled
+    return true;
   }, [syncMode, syncEnabled, isUnlocked, vaultEnvelope, vaultKey]);
 
-  // Refresh pending count based on sync mode
   const refreshPendingCount = useCallback(() => {
+    // Only access storage on client side
+    if (typeof window === 'undefined') return;
+
     if (syncMode === 'e2e') {
       setState(prev => ({ ...prev, pendingCount: getEncryptedPendingCount() }));
     } else if (syncMode === 'plaintext') {
@@ -139,131 +136,61 @@ export function useSyncEngine(): UseSyncEngineReturn {
     }
   }, [syncMode]);
 
-  // Load last sync time and pending count on mount
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
     refreshPendingCount();
 
-    // Listen for sync events from other tabs
-    const channel = new BroadcastChannel('sync-events');
-    channel.onmessage = (event) => {
-      if (event.data.type === 'SYNC_COMPLETE') {
-        setState(prev => ({ ...prev, lastSync: new Date() }));
-        refreshPendingCount();
-      }
-    };
+    // BroadcastChannel might not be available in all contexts
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('sync-events');
+      channel.onmessage = (event) => {
+        if (event.data.type === 'SYNC_COMPLETE') {
+          setState(prev => ({ ...prev, lastSync: new Date() }));
+          refreshPendingCount();
+        }
+      };
+    } catch {
+      // BroadcastChannel not available, ignore
+    }
 
-    // Load last sync from localStorage
     const stored = localStorage.getItem('last-sync-time');
     if (stored) {
       setState(prev => ({ ...prev, lastSync: new Date(stored) }));
     }
 
-    return () => channel.close();
+    return () => {
+      try {
+        channel?.close();
+      } catch {
+        // Ignore
+      }
+    };
   }, [refreshPendingCount]);
 
-  // Push operations to server
-  const syncPush = useCallback(async (): Promise<SyncPushResult> => {
-    if (!canSync()) {
-      return { success: false, synced: 0, conflicts: [], errors: ['Sync not available'] };
-    }
-
-    if (syncInProgressRef.current) {
-      return { success: false, synced: 0, conflicts: [], errors: ['Sync already in progress'] };
-    }
-
-    syncInProgressRef.current = true;
-    setState(prev => ({ ...prev, isSyncing: true, error: null, progress: 0 }));
-
-    try {
-      let result: SyncPushResult;
-
-      if (syncMode === 'e2e') {
-        // Use encrypted sync
-        const encResult = await encryptedPush();
-        result = {
-          success: encResult.success,
-          synced: encResult.pushed,
-          conflicts: encResult.conflicts.map(c => ({
-            recordId: c.recordId,
-            recordType: 'bookmark' as RecordType,
-            localVersion: 0,
-            serverVersion: c.currentVersion,
-          })),
-          errors: encResult.error ? [encResult.error] : [],
-        };
-      } else {
-        // Use plaintext sync
-        result = await pushPlaintext();
-      }
-
-      setState(prev => ({ ...prev, progress: 100 }));
-
-      if (result.success) {
-        // Update local _syncVersion with server versions (only when items were synced)
-        if (result.synced > 0 && result.results) {
-          updateLocalSyncVersions(result.results);
-          // Show sync success toast only when items were actually synced
-          toast.success('Synced to cloud');
-        }
-
-        const now = new Date();
-        setState(prev => ({ ...prev, lastSync: now }));
-        setLastSyncAt(now.toISOString());
-        localStorage.setItem('last-sync-time', now.toISOString());
-
-        // Notify other tabs
-        const channel = new BroadcastChannel('sync-events');
-        channel.postMessage({ type: 'SYNC_COMPLETE' });
-        channel.close();
-      }
-
-      refreshPendingCount();
-      return result;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Push failed';
-      setState(prev => ({ ...prev, error: message }));
-      toast.error('Sync failed', { description: message });
-      return { success: false, synced: 0, conflicts: [], errors: [message] };
-    } finally {
-      syncInProgressRef.current = false;
-      setState(prev => ({ ...prev, isSyncing: false }));
-    }
-  }, [canSync, syncMode, refreshPendingCount, setLastSyncAt]);
-
-  // Pull records from server
+  // === PULL ===
   const syncPull = useCallback(async (): Promise<PlaintextRecord[]> => {
-    if (!canSync()) {
-      return [];
-    }
-
-    if (syncInProgressRef.current) {
-      return [];
-    }
+    if (!canSync()) return [];
+    if (syncInProgressRef.current) return [];
 
     syncInProgressRef.current = true;
-    setState(prev => ({ ...prev, isSyncing: true, error: null, progress: 0 }));
+    setState(prev => ({ ...prev, isSyncing: true, error: null }));
 
     try {
       let records: PlaintextRecord[] = [];
 
       if (syncMode === 'e2e') {
-        // Use encrypted sync - records need to be decrypted by caller
-        await encryptedPull((pulled, hasMore) => {
-          setState(prev => ({ ...prev, progress: hasMore ? 50 : 100 }));
-        });
-        // Note: For E2E, the actual records are sent via BroadcastChannel
-        // and handled by useIncomingSync hook
+        await encryptedPull(() => {});
       } else {
-        // Use plaintext sync
         const result = await pullAllPlaintext();
-        if (result.error) {
-          throw new Error(result.error);
-        }
+        if (result.error) throw new Error(result.error);
         records = result.records;
       }
 
       const now = new Date();
-      setState(prev => ({ ...prev, lastSync: now, progress: 100 }));
+      setState(prev => ({ ...prev, lastSync: now }));
       setLastSyncAt(now.toISOString());
       localStorage.setItem('last-sync-time', now.toISOString());
 
@@ -279,14 +206,72 @@ export function useSyncEngine(): UseSyncEngineReturn {
     }
   }, [canSync, syncMode, setLastSyncAt]);
 
-  // Full sync (push then pull)
-  const syncFull = useCallback(async (): Promise<{ pushed: number; pulled: number }> => {
-    const pushResult = await syncPush();
-    const pulled = await syncPull();
-    return { pushed: pushResult.synced, pulled: pulled.length };
-  }, [syncPush, syncPull]);
+  // === PUSH ===
+  const syncPush = useCallback(async (): Promise<SyncPushResult> => {
+    if (!canSync()) {
+      return { success: false, synced: 0, conflicts: [], errors: ['Sync not available'] };
+    }
 
-  // Helper to apply pulled records to localStorage
+    if (syncInProgressRef.current) {
+      return { success: false, synced: 0, conflicts: [], errors: ['Sync already in progress'] };
+    }
+
+    syncInProgressRef.current = true;
+    setState(prev => ({ ...prev, isSyncing: true, error: null }));
+
+    try {
+      let result: SyncPushResult;
+
+      if (syncMode === 'e2e') {
+        const encResult = await encryptedPush();
+        result = {
+          success: encResult.success,
+          synced: encResult.pushed,
+          conflicts: encResult.conflicts.map(c => ({
+            recordId: c.recordId,
+            recordType: 'bookmark' as RecordType,
+            localVersion: 0,
+            serverVersion: c.currentVersion,
+          })),
+          errors: encResult.error ? [encResult.error] : [],
+        };
+      } else {
+        result = await pushPlaintext();
+      }
+
+      if (result.success && result.synced > 0 && result.results) {
+        updateLocalSyncVersions(result.results);
+        toast.success('Synced to cloud');
+      }
+
+      const now = new Date();
+      setState(prev => ({ ...prev, lastSync: now }));
+      setLastSyncAt(now.toISOString());
+      localStorage.setItem('last-sync-time', now.toISOString());
+
+      // Notify other tabs (if BroadcastChannel is available)
+      try {
+        const channel = new BroadcastChannel('sync-events');
+        channel.postMessage({ type: 'SYNC_COMPLETE' });
+        channel.close();
+      } catch {
+        // BroadcastChannel not available, ignore
+      }
+
+      refreshPendingCount();
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Push failed';
+      setState(prev => ({ ...prev, error: message }));
+      toast.error('Sync failed', { description: message });
+      return { success: false, synced: 0, conflicts: [], errors: [message] };
+    } finally {
+      syncInProgressRef.current = false;
+      setState(prev => ({ ...prev, isSyncing: false }));
+    }
+  }, [canSync, syncMode, setLastSyncAt, refreshPendingCount]);
+
+  // === APPLY PULLED RECORDS ===
   const applyPulledRecords = useCallback((records: PlaintextRecord[]) => {
     const bookmarks: Bookmark[] = [];
     const spaces: Space[] = [];
@@ -295,102 +280,85 @@ export function useSyncEngine(): UseSyncEngineReturn {
     for (const record of records) {
       if (record.deleted) continue;
 
-      const plaintextRecord = record as PlaintextRecord;
-      switch (plaintextRecord.recordType) {
+      const r = record as PlaintextRecord;
+      switch (r.recordType) {
         case 'bookmark':
           bookmarks.push({
-            ...(plaintextRecord.data as Bookmark),
-            _syncVersion: plaintextRecord.version,
+            ...(r.data as Bookmark),
+            _syncVersion: r.version,
+            updatedAt: r.updatedAt,
           });
           break;
         case 'space':
           spaces.push({
-            ...(plaintextRecord.data as Space),
-            _syncVersion: plaintextRecord.version,
+            ...(r.data as Space),
+            _syncVersion: r.version,
+            updatedAt: r.updatedAt,
           });
           break;
         case 'pinned-view':
           pinnedViews.push({
-            ...(plaintextRecord.data as PinnedView),
-            _syncVersion: plaintextRecord.version,
+            ...(r.data as PinnedView),
+            _syncVersion: r.version,
+            updatedAt: r.updatedAt,
           });
           break;
       }
     }
 
-    // Apply to localStorage (this also recalculates checksum via recalculateAndSaveChecksum)
-    if (bookmarks.length > 0 || spaces.length > 0 || pinnedViews.length > 0) {
-      setBookmarks(bookmarks);
-      setSpaces(spaces);
-      savePinnedViews(pinnedViews);
-      // Trigger React state refresh
-      triggerRefresh();
-    }
+    // Always save to localStorage (even if empty - this means server is empty)
+    setBookmarks(bookmarks);
+    setSpaces(spaces);
+    savePinnedViews(pinnedViews);
+
+    // Trigger UI refresh so components re-render
+    triggerRefresh();
   }, [triggerRefresh]);
 
-  // Check checksum before pulling (optimized sync)
+  // === SIMPLIFIED CHECK AND SYNC ===
   const checkAndSync = useCallback(async (): Promise<{ pulled: number; skipped: boolean }> => {
-    if (!canSync()) {
+    if (!canSync() || syncInProgressRef.current) {
       return { pulled: 0, skipped: true };
     }
-
-    if (syncInProgressRef.current) {
-      return { pulled: 0, skipped: true };
-    }
-
-    syncInProgressRef.current = true;
-    setState(prev => ({ ...prev, isSyncing: true, error: null, progress: 0 }));
 
     try {
-      // Get local checksum metadata
-      const localMeta = getStoredChecksumMeta();
-
       // Fetch server checksum
-      const response = await fetch('/api/sync/plaintext/checksum');
+      const response = await fetch('/api/sync/plaintext/checksum', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      });
+
       if (!response.ok) {
-        // If checksum endpoint fails, fall back to full pull
+        // Checksum failed - fall back to pull
         const records = await syncPull();
-        applyPulledRecords(records);
-        setState(prev => ({ ...prev, progress: 100 }));
+        if (records.length > 0) {
+          applyPulledRecords(records);
+        }
         return { pulled: records.length, skipped: false };
       }
 
       const serverMeta: ChecksumMeta = await response.json();
+      const localMeta = getStoredChecksumMeta();
 
-      // If no local checksum exists, always pull
-      if (!localMeta) {
-        const records = await syncPull();
-        applyPulledRecords(records);
-        // Save the server checksum after pull
-        saveChecksumMeta(serverMeta);
-        setState(prev => ({ ...prev, progress: 100 }));
-        return { pulled: records.length, skipped: false };
-      }
+      // Simple rule: pull if no local meta OR checksums differ
+      const needsPull = !localMeta || localMeta.checksum !== serverMeta.checksum;
 
-      // Multi-layer verification: checksum + count + timestamp
-      const checksumMatch = localMeta.checksum === serverMeta.checksum;
-      const countMatch = localMeta.count === serverMeta.count;
-      const timestampValid = localMeta.lastUpdate
-        ? new Date(localMeta.lastUpdate) >= new Date(serverMeta.lastUpdate || 0)
-        : false;
-
-      if (checksumMatch && countMatch && timestampValid) {
-        // All checks pass - data is in sync, skip pull
-        setState(prev => ({ ...prev, progress: 100 }));
+      if (!needsPull) {
         return { pulled: 0, skipped: true };
       }
 
-      // Something doesn't match - pull data and apply it
       const records = await syncPull();
       applyPulledRecords(records);
-      // Save the new checksum after pull
       saveChecksumMeta(serverMeta);
-      setState(prev => ({ ...prev, progress: 100 }));
+
       return { pulled: records.length, skipped: false };
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Checksum check failed';
-      setState(prev => ({ ...prev, error: message }));
-      // On error, fall back to full pull
+      setState(prev => ({ ...prev, error: error instanceof Error ? error.message : 'Sync failed' }));
+
+      // On error, try to pull
       try {
         const records = await syncPull();
         applyPulledRecords(records);
@@ -399,65 +367,49 @@ export function useSyncEngine(): UseSyncEngineReturn {
         return { pulled: 0, skipped: false };
       }
     } finally {
-      syncInProgressRef.current = false;
-      setState(prev => ({ ...prev, isSyncing: false }));
+      // Don't clear syncInProgressRef here - syncPull handles it
     }
   }, [canSync, syncPull, applyPulledRecords]);
 
-  // Queue bookmark for sync
-  const queueBookmark = useCallback((
-    bookmark: Bookmark,
-    version: number,
-    deleted: boolean = false
-  ) => {
-    if (!canSync()) return;
-
-    if (syncMode === 'e2e') {
-      // For E2E, we need to encrypt first - this should be handled by the caller
-      // who has access to the vault key
-      console.warn('E2E queue should be handled with encryption');
-    } else {
-      queuePlaintextOperation(bookmark.id, 'bookmark', bookmark, version, deleted);
+  // === SYNC FULL ===
+  const syncFull = useCallback(async (): Promise<{ pushed: number; pulled: number }> => {
+    const pushResult = await syncPush();
+    const pulled = await syncPull();
+    if (pulled.length > 0) {
+      applyPulledRecords(pulled);
     }
-    refreshPendingCount();
+    return { pushed: pushResult.synced, pulled: pulled.length };
+  }, [syncPush, syncPull, applyPulledRecords]);
+
+  // === QUEUE OPERATIONS ===
+  const queueBookmark = useCallback((bookmark: Bookmark, version: number, deleted: boolean = false) => {
+    if (!canSync()) return;
+    if (syncMode === 'plaintext') {
+      queuePlaintextOperation(bookmark.id, 'bookmark', bookmark, version, deleted);
+      refreshPendingCount();
+    }
   }, [canSync, syncMode, refreshPendingCount]);
 
-  // Queue space for sync
-  const queueSpace = useCallback((
-    space: Space,
-    version: number,
-    deleted: boolean = false
-  ) => {
+  const queueSpace = useCallback((space: Space, version: number, deleted: boolean = false) => {
     if (!canSync()) return;
-
     if (syncMode === 'plaintext') {
       queuePlaintextOperation(space.id, 'space', space, version, deleted);
+      refreshPendingCount();
     }
-    // E2E space sync not yet implemented
-    refreshPendingCount();
-  }, [canSync, syncMode, refreshPendingCount]);
+  }, [canSync, refreshPendingCount]);
 
-  // Queue pinned view for sync
-  const queuePinnedView = useCallback((
-    view: PinnedView,
-    version: number,
-    deleted: boolean = false
-  ) => {
+  const queuePinnedView = useCallback((view: PinnedView, version: number, deleted: boolean = false) => {
     if (!canSync()) return;
-
     if (syncMode === 'plaintext') {
       queuePlaintextOperation(view.id, 'pinned-view', view, version, deleted);
+      refreshPendingCount();
     }
-    // E2E pinned view sync not yet implemented
-    refreshPendingCount();
-  }, [canSync, syncMode, refreshPendingCount]);
+  }, [canSync, refreshPendingCount]);
 
-  // Clear all pending operations
   const clearPending = useCallback(() => {
     if (syncMode === 'plaintext') {
       clearPlaintextOutbox();
     }
-    // For E2E, use the existing clear function from sync-outbox
     refreshPendingCount();
   }, [syncMode, refreshPendingCount]);
 
