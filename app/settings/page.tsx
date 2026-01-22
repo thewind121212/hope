@@ -2,6 +2,7 @@
 
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { SyncModeToggle } from "@/components/settings/SyncModeToggle";
+import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { useIncomingSync } from "@/hooks/useIncomingSync";
 
 export default function SettingsPage() {
@@ -16,6 +17,13 @@ export default function SettingsPage() {
         description="Choose how your bookmarks are stored and synced"
       >
         <SyncModeToggle />
+      </SettingsSection>
+
+      <SettingsSection
+        title="Appearance"
+        description="Customize how Bookmark Vault looks"
+      >
+        <ThemeSettings />
       </SettingsSection>
 
       <SettingsSection

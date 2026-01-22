@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, Loader2, LogOut } from 'lucide-react';
+import { useClerk } from '@clerk/nextjs';
 import Button from '@/components/ui/Button';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useVaultUnlock } from '@/hooks/useVaultUnlock';
 
 export function UnlockScreen() {
@@ -10,7 +12,9 @@ export function UnlockScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { unlock } = useVaultUnlock();
+  const { signOut } = useClerk();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +29,17 @@ export function UnlockScreen() {
     } finally {
       setIsUnlocking(false);
     }
+  };
+
+  const handleLogout = async () => {
+    // Clear all localStorage data first (prevents any sync triggers)
+    localStorage.clear();
+    // Clear sessionStorage
+    sessionStorage.clear();
+    // Sign out via Clerk
+    await signOut();
+    // Hard refresh to clear all in-memory state
+    window.location.href = '/';
   };
 
   return (
@@ -90,7 +105,18 @@ export function UnlockScreen() {
           </Button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div className="mt-6">
+          <button
+            type="button"
+            onClick={() => setShowLogoutDialog(true)}
+            className="w-full flex items-center justify-center gap-2 py-3 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out and clear local data
+          </button>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800">
           <p className="text-xs text-slate-500 dark:text-slate-400 text-center leading-relaxed">
             Your passphrase is never stored or transmitted.
             <br />
@@ -98,6 +124,17 @@ export function UnlockScreen() {
           </p>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showLogoutDialog}
+        onClose={() => setShowLogoutDialog(false)}
+        onConfirm={handleLogout}
+        title="Sign out and clear all data?"
+        description="This will permanently delete all your local bookmarks and settings. If you have cloud sync enabled, your data will remain on the server, but you will need to sign in again and enter your passphrase to access it."
+        confirmLabel="Sign out & Clear Data"
+        cancelLabel="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

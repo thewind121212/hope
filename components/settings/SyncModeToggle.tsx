@@ -107,6 +107,11 @@ export function SyncModeToggle() {
   }, []);
 
   const handleModeSelect = useCallback(async (mode: SyncMode) => {
+    // If already in this mode, do nothing
+    if (mode === syncMode) {
+      return;
+    }
+
     // Switching to E2E mode always requires creating a new passphrase.
     // This ensures a fresh vault key and avoids issues with stale/corrupted envelopes.
     if (mode === 'e2e') {

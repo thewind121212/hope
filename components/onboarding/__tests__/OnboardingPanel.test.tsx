@@ -1,101 +1,128 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { OnboardingPanel } from '@voc/components/onboarding/OnboardingPanel';
+import { OnboardingPanel } from '@/components/onboarding/OnboardingPanel';
 
-// Mock dependencies
-vi.mock('@/lib/onboarding', () => ({
-  hasSeenOnboarding: vi.fn(() => false),
-  markOnboardingSeen: vi.fn(),
+// Mock next/navigation
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
 }));
 
-vi.mock('@/hooks/useBookmarks', () => ({
-  useBookmarks: vi.fn(() => ({
-    addBookmark: vi.fn(),
-    importBookmarks: vi.fn(() => Promise.resolve({ success: true })),
+// Mock Clerk
+jest.mock('@clerk/nextjs', () => ({
+  useAuth: jest.fn(() => ({
+    isSignedIn: false,
+    isLoaded: true,
   })),
 }));
 
-vi.mock('@/lib/demoBookmarks', () => ({
-  getDemoBookmarksWithIds: vi.fn(() => [
-    { id: 'demo-0', title: 'GitHub', url: 'https://github.com', tags: ['dev'], createdAt: '2024-01-01' },
-  ]),
+// Mock onboarding lib
+jest.mock('@/lib/onboarding', () => ({
+  hasSeenOnboarding: jest.fn(() => false),
+  markOnboardingSeen: jest.fn(),
 }));
 
+import { useAuth } from '@clerk/nextjs';
 import { hasSeenOnboarding, markOnboardingSeen } from '@/lib/onboarding';
-import { useBookmarks } from '@/hooks/useBookmarks';
 
 describe('OnboardingPanel', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
+    (useAuth as jest.Mock).mockReturnValue({
+      isSignedIn: false,
+      isLoaded: true,
+    });
   });
 
-  it('renders when onboarding not seen', async () => {
-    (hasSeenOnboarding as vi.Mock).mockReturnValue(false);
+  it('renders when onboarding not seen and not signed in', async () => {
+    (hasSeenOnboarding as jest.Mock).mockReturnValue(false);
 
     render(<OnboardingPanel />);
 
     await waitFor(() => {
-      expect(screen.getByText('Welcome to Bookmark Vault!')).toBeInTheDocument();
+      expect(screen.getByText('Welcome to Bookmark Vault')).toBeInTheDocument();
     });
   });
 
-  it('does not render when onboarding seen', async () => {
-    (hasSeenOnboarding as vi.Mock).mockReturnValue(true);
+  it('does not render when onboarding already seen', async () => {
+    (hasSeenOnboarding as jest.Mock).mockReturnValue(true);
 
     const { container } = render(<OnboardingPanel />);
 
     await waitFor(() => {
-      expect(screen.queryByText('Welcome to Bookmark Vault!')).not.toBeInTheDocument();
+      expect(screen.queryByText('Welcome to Bookmark Vault')).not.toBeInTheDocument();
     });
     expect(container.firstChild).toBeNull();
   });
 
-  it('shows all tips', async () => {
-    (hasSeenOnboarding as vi.Mock).mockReturnValue(false);
+  it('shows two options: Local Only and Sign In', async () => {
+    (hasSeenOnboarding as jest.Mock).mockReturnValue(false);
 
     render(<OnboardingPanel />);
 
     await waitFor(() => {
-      expect(screen.getByText('Add Bookmarks')).toBeInTheDocument();
-      expect(screen.getByText('Search & Filter')).toBeInTheDocument();
-      expect(screen.getByText('Export Your Data')).toBeInTheDocument();
+      expect(screen.getByText('Continue with Local Only')).toBeInTheDocument();
+      expect(screen.getByText('Sign In')).toBeInTheDocument();
     });
   });
 
-  it('marks onboarding as seen and closes on skip', async () => {
-    (hasSeenOnboarding as vi.Mock).mockReturnValue(false);
-    const mockImportBookmarks = vi.fn(() => Promise.resolve({ success: true }));
-    (useBookmarks as vi.Mock).mockReturnValue({
-      importBookmarks: mockImportBookmarks,
-    });
+  it('marks onboarding as seen and closes when clicking Local Only', async () => {
+    (hasSeenOnboarding as jest.Mock).mockReturnValue(false);
 
     render(<OnboardingPanel />);
 
-    const skipButton = await screen.findByText('Skip, I\'ll Explore Myself');
+    const localOnlyButton = await screen.findByText('Continue with Local Only');
+    await userEvent.click(localOnlyButton);
+
+    expect(markOnboardingSeen).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByText('Welcome to Bookmark Vault')).not.toBeInTheDocument();
+    });
+  });
+
+  it('redirects to sign-in when clicking Sign In', async () => {
+    (hasSeenOnboarding as jest.Mock).mockReturnValue(false);
+
+    render(<OnboardingPanel />);
+
+    const signInButton = await screen.findByText('Sign In');
+    await userEvent.click(signInButton);
+
+    expect(mockPush).toHaveBeenCalledWith('/sign-in');
+  });
+
+  it('marks onboarding as seen and closes on Skip', async () => {
+    (hasSeenOnboarding as jest.Mock).mockReturnValue(false);
+
+    render(<OnboardingPanel />);
+
+    const skipButton = await screen.findByText('Skip for Now');
     await userEvent.click(skipButton);
 
     expect(markOnboardingSeen).toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.queryByText('Welcome to Bookmark Vault!')).not.toBeInTheDocument();
+      expect(screen.queryByText('Welcome to Bookmark Vault')).not.toBeInTheDocument();
     });
   });
 
-  it('loads demo bookmarks on start with samples', async () => {
-    (hasSeenOnboarding as vi.Mock).mockReturnValue(false);
-    const mockImportBookmarks = vi.fn(() => Promise.resolve({ success: true }));
-    (useBookmarks as vi.Mock).mockReturnValue({
-      importBookmarks: mockImportBookmarks,
+  it('does not show onboarding when user is signed in', async () => {
+    (hasSeenOnboarding as jest.Mock).mockReturnValue(false);
+    (useAuth as jest.Mock).mockReturnValue({
+      isSignedIn: true,
+      isLoaded: true,
     });
 
     render(<OnboardingPanel />);
 
-    const samplesButton = await screen.findByText('Start with Sample Bookmarks');
-    await userEvent.click(samplesButton);
-
+    // When signed in, onboarding should not be visible (it triggers a hard refresh)
     await waitFor(() => {
-      expect(mockImportBookmarks).toHaveBeenCalled();
-      expect(markOnboardingSeen).toHaveBeenCalled();
+      expect(screen.queryByText('Welcome to Bookmark Vault')).not.toBeInTheDocument();
     });
   });
 });

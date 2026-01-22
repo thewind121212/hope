@@ -2,12 +2,22 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme";
+import { Lock, Settings } from "lucide-react";
 import { AuthHeader } from "@/components/auth";
+import { useVaultStore } from "@/stores/vault-store";
+import { useSyncSettingsStore } from "@/stores/sync-settings-store";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const isSettingsPage = pathname === "/settings";
+  const { vaultEnvelope, isUnlocked, lock } = useVaultStore();
+  const { syncMode } = useSyncSettingsStore();
+
+  const showQuickLock = syncMode === 'e2e' && vaultEnvelope && isUnlocked;
+
+  const handleQuickLock = () => {
+    lock();
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-zinc-200 dark:bg-slate-900/80 dark:border-slate-800">
@@ -19,13 +29,28 @@ export function SiteHeader() {
               <h1 className="text-2xl font-semibold tracking-tight">Bookmark Vault</h1>
             </Link>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {showQuickLock && (
+              <button
+                type="button"
+                onClick={handleQuickLock}
+                className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors"
+                title="Lock vault"
+                aria-label="Lock vault"
+              >
+                <Lock className="w-5 h-5" />
+              </button>
+            )}
             {!isSettingsPage && (
-              <Link href="/settings" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 text-sm">
-                Settings
+              <Link 
+                href="/settings" 
+                className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors"
+                title="Settings"
+                aria-label="Settings"
+              >
+                <Settings className="w-5 h-5" />
               </Link>
             )}
-            <ThemeToggle />
             <AuthHeader />
           </div>
         </div>
