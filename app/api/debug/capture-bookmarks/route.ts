@@ -5,7 +5,7 @@ import { join } from 'path';
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const filePath = join(process.cwd(), 'bookmarks-captured.json');
+    const filePath = join(process.cwd(), 'validator-check', 'bookmarks-captured.json');
     await writeFile(filePath, JSON.stringify(data, null, 2));
     return NextResponse.json({ success: true, message: 'Data captured' });
   } catch (error) {
