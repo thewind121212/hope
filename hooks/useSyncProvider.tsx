@@ -67,7 +67,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   // Refs for debouncing and intervals
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const periodicSyncIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const hasInitializedRef = useRef(false);
+  const lastLoadedUserIdRef = useRef<string | null>(null);
   const hasPulledOnMountRef = useRef(false);
 
   // Track online/offline status
@@ -90,11 +90,17 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
   const initializeVault = useVaultStore((s) => s.initialize);
 
   useEffect(() => {
-    if (isSignedIn && isLoaded && !hasInitializedRef.current) {
-      hasInitializedRef.current = true;
-      loadFromServer().catch(() => {});
+    if (!isLoaded) return;
+
+    if (!isSignedIn || !userId) {
+      lastLoadedUserIdRef.current = null;
+      return;
     }
-  }, [isSignedIn, isLoaded, loadFromServer]);
+
+    if (lastLoadedUserIdRef.current === userId) return;
+    lastLoadedUserIdRef.current = userId;
+    loadFromServer().catch(() => {});
+  }, [isSignedIn, isLoaded, userId, loadFromServer]);
 
   // If the server says we're in E2E mode, ensure vault-store loads envelope
   // for this user so the app can show the unlock screen immediately.

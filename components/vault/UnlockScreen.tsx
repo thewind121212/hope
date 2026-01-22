@@ -32,14 +32,20 @@ export function UnlockScreen() {
   };
 
   const handleLogout = async () => {
-    // Clear all localStorage data first (prevents any sync triggers)
-    localStorage.clear();
-    // Clear sessionStorage
-    sessionStorage.clear();
-    // Sign out via Clerk
-    await signOut();
-    // Hard refresh to clear all in-memory state
-    window.location.href = '/';
+    try {
+      // Clear all localStorage data first (prevents any sync triggers)
+      localStorage.clear();
+      // Clear sessionStorage
+      sessionStorage.clear();
+    } finally {
+      try {
+        // Sign out via Clerk
+        await signOut();
+      } finally {
+        // Hard refresh to clear all in-memory state
+        window.location.replace('/');
+      }
+    }
   };
 
   return (

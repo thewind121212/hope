@@ -2,7 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 
+function isDebugCaptureAllowed(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.DEBUG_CAPTURE_ENABLED !== 'true') return false;
+  const host = request.headers.get('host') ?? '';
+  return host.startsWith('localhost') || host.startsWith('127.0.0.1');
+}
+
 export async function POST(request: NextRequest) {
+  if (!isDebugCaptureAllowed(request)) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   try {
     const data = await request.json();
     const filePath = join(process.cwd(), 'validator-check', 'bookmarks-captured.json');
@@ -13,7 +24,11 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isDebugCaptureAllowed(request)) {
+    return new NextResponse('Not found', { status: 404 });
+  }
+
   return new NextResponse(`
     <!DOCTYPE html>
     <html>

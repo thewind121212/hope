@@ -65,6 +65,23 @@ export function VaultInitializer({ children }: { children: React.ReactNode }) {
     wasSignedIn.current = isSignedIn;
   }, [isLoaded, isSignedIn, user, initialize, clearSession, currentUserId, syncMode]);
 
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user) return;
+    if (syncMode !== 'e2e') return;
+    if (fetchAttempted.current === user.id) return;
+
+    fetchAttempted.current = user.id;
+    setIsFetching(true);
+
+    fetchEnvelopeFromServer(user.id)
+      .catch((error) => {
+        console.error('[VaultInitializer] Failed to fetch envelope from server:', error);
+      })
+      .finally(() => {
+        setIsFetching(false);
+      });
+  }, [isLoaded, isSignedIn, user, syncMode]);
+
   // Don't block rendering while fetching - the UI will update when envelope arrives
   return <>{children}</>;
 }
