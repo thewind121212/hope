@@ -1,0 +1,22 @@
+{
+  "name": "bookmark-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Bookmark Vault operations",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "bookmark-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bookmark-mcp": {
+      "command": "node",
+      "args": ["./bookmark-mcp/dist/index.js"]
+    }
+  }
+}
