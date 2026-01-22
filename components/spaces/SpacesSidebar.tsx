@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useMemo, useState } from "react";
+import { Dashboard } from "@/components/bookmarks/Dashboard";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -205,11 +206,12 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
   return (
     <aside
       className={cn(
-        "w-full lg:w-72 lg:sticky lg:top-6 lg:self-start",
+        "w-full lg:w-72 lg:sticky lg:top-25 lg:self-start",
         className
       )}
     >
       <div className="space-y-4">
+        <Dashboard />
         <Card className="p-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">

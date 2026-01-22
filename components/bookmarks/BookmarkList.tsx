@@ -13,11 +13,17 @@ import { useUiStore } from "@/stores/useUiStore";
 interface BookmarkListProps {
   cardsContainerRef: React.Ref<HTMLDivElement>;
   onAddBookmark?: () => void;
+  onOpenImportExport?: () => void;
+  onOpenSpaces?: () => void;
+  spacesLabel?: string;
 }
 
 export default function BookmarkList({
   cardsContainerRef,
   onAddBookmark,
+  onOpenImportExport,
+  onOpenSpaces,
+  spacesLabel,
 }: BookmarkListProps) {
   const {
     errorMessage,
@@ -109,6 +115,9 @@ export default function BookmarkList({
         cardsContainerRef={cardsContainerRef}
         cards={cards}
         onAddBookmark={onAddBookmark}
+        onOpenImportExport={onOpenImportExport}
+        onOpenSpaces={onOpenSpaces}
+        spacesLabel={spacesLabel}
       />
       <BulkActionsBar
         selectedCount={selectedCount}

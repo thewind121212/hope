@@ -5,9 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import BookmarkFormModal from "@/components/bookmarks/BookmarkFormModal";
 import ImportExportModal from "@/components/bookmarks/ImportExportModal";
 import BookmarkList from "@/components/BookmarkList";
-import { Dashboard } from "@/components/bookmarks/Dashboard";
 import { OnboardingPanel } from "@/components/onboarding/OnboardingPanel";
-import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { BottomSheet, Button } from "@/components/ui";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { BookmarksProvider } from "@/hooks/useBookmarks";
@@ -170,49 +168,6 @@ export default function Home() {
 
             {/* Main content */}
             <div className="min-w-0">
-              {/* Sticky header section */}
-              <div className="sticky top-[65px] z-20 bg-white/95 dark:bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-950/80 -mx-4 px-4 pt-4 pb-4 mb-4">
-                {/* Title + Actions row */}
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Your personal vault</p>
-                    <h2 className="text-2xl font-semibold">Manage your bookmarks</h2>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button onClick={openForm}>Add bookmark</Button>
-                    <Button
-                      variant="secondary"
-                      onClick={openImportExport}
-                      aria-label="Import or export bookmarks"
-                    >
-                      <ImportExportIcon />
-                    </Button>
-                    {/* Keyboard Shortcuts Help */}
-                    <KeyboardShortcutsHelp position="bottom" />
-                  </div>
-                </div>
-
-                {/* Mobile space selector */}
-                <div className="flex items-center justify-between gap-3 lg:hidden mb-4">
-                  <div className="min-w-0">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Space</p>
-                    <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {spacesLabel}
-                    </p>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    className="shrink-0"
-                    onClick={openSpaces}
-                  >
-                    Spaces
-                  </Button>
-                </div>
-              </div>
-
-              {/* Dashboard - scrolls with content */}
-              <Dashboard />
-
               {/* Modals */}
               <BookmarkFormModal
                 titleInputRef={titleInputRef}
@@ -223,6 +178,9 @@ export default function Home() {
               <BookmarkList
                 cardsContainerRef={cardsContainerRef}
                 onAddBookmark={openForm}
+                onOpenImportExport={openImportExport}
+                onOpenSpaces={openSpaces}
+                spacesLabel={spacesLabel}
               />
             </div>
           </div>
@@ -233,28 +191,5 @@ export default function Home() {
         </div>
       </BookmarksProvider>
     </ErrorBoundary>
-  );
-}
-
-function ImportExportIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="16 3 21 3 21 8" />
-      <line x1="4" y1="20" x2="21" y2="3" />
-      <polyline points="21 16 21 21 16 21" />
-      <line x1="15" y1="15" x2="21" y2="21" />
-      <line x1="4" y1="4" x2="9" y2="9" />
-    </svg>
   );
 }
