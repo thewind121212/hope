@@ -10,7 +10,22 @@ export async function GET() {
   }
 
   try {
-    const vaultResult = await query(
+    type VaultRow = {
+      id: string;
+      wrapped_key: string | Buffer;
+      salt: string | Buffer;
+      kdf_params: unknown;
+      enabled_at: string;
+    };
+    type RecordRow = {
+      record_id: string;
+      ciphertext: string | Buffer;
+      version: number;
+      deleted: boolean;
+      updated_at: string;
+    };
+
+    const vaultResult = await query<VaultRow>(
       'SELECT id, wrapped_key, salt, kdf_params, enabled_at FROM vaults WHERE user_id = $1',
       [userId]
     );
@@ -21,7 +36,7 @@ export async function GET() {
 
     const vault = vaultResult[0];
 
-    const records = await query(
+    const records = await query<RecordRow>(
       `SELECT record_id, ciphertext, version, deleted, updated_at
        FROM records
        WHERE user_id = $1 AND deleted = false

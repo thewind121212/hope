@@ -88,7 +88,6 @@ export function UnlockScreen() {
               onChange={(e) => setPassphrase(e.target.value)}
               placeholder="Enter passphrase"
               className="w-full px-4 py-3.5 pr-12 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500 dark:focus:ring-rose-400 focus:border-transparent transition-all"
-              autoFocus
               disabled={isUnlocking}
             />
             <button

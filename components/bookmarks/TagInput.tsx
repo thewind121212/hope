@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Input from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
+import type { BookmarkFormState } from "@/hooks/useBookmarkForm";
 
 function normalizeTag(raw: string): string {
   return raw.trim();
@@ -23,13 +24,13 @@ function stringifyTags(tags: string[]): string {
 interface TagInputProps {
   id: string;
   label: string;
-  name: string;
+  name: keyof BookmarkFormState;
   value: string;
   onChangeValue: (nextValue: string) => void;
   error?: string;
   suggestions: string[];
   containerClassName?: string;
-  registerField?: (fieldName: string, element: HTMLInputElement | null) => void;
+  registerField?: (fieldName: keyof BookmarkFormState, element: HTMLInputElement | null) => void;
 }
 
 export default function TagInput({

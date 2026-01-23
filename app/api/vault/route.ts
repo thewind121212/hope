@@ -2,6 +2,15 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/db';
 
+type VaultRow = {
+  id: string;
+  enabled_at: string;
+  device_fingerprint: string | null;
+  wrapped_key: string | Buffer | null;
+  salt: string | Buffer | null;
+  kdf_params: unknown;
+};
+
 export async function GET() {
   const authResult = await auth();
   const userId = authResult.userId;
@@ -9,7 +18,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const result = await query(
+  const result = await query<VaultRow>(
     'SELECT id, enabled_at, device_fingerprint, wrapped_key, salt, kdf_params FROM vaults WHERE user_id = $1',
     [userId]
   );

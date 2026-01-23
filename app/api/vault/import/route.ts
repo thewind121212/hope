@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/db';
 
+type VaultRow = { id: string };
+type ExistingRecordRow = { record_id: string; version: number };
+
 export async function POST(req: NextRequest) {
   const authResult = await auth();
   const userId = authResult.userId;
@@ -20,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unsupported version' }, { status: 400 });
     }
 
-    const vaultResult = await query(
+    const vaultResult = await query<VaultRow>(
       'SELECT id FROM vaults WHERE user_id = $1',
       [userId]
     );
@@ -31,12 +34,12 @@ export async function POST(req: NextRequest) {
 
     const importMode = body.importMode || 'merge';
 
-    const existingRecords = await query(
+    const existingRecords = await query<ExistingRecordRow>(
       'SELECT record_id, version FROM records WHERE user_id = $1',
       [userId]
     );
 
-    const existingMap = new Map(existingRecords.map((r: { record_id: string; version: number }) => [r.record_id, r]));
+    const existingMap = new Map(existingRecords.map((r) => [r.record_id, r]));
 
     let imported = 0;
     let skipped = 0;

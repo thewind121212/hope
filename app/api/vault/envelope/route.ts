@@ -3,6 +3,15 @@ import { auth } from '@clerk/nextjs/server';
 import { query } from '@/lib/db';
 import type { VaultKeyEnvelope } from '@/lib/types';
 
+type VaultEnvelopeRow = {
+  wrapped_key: string | Buffer;
+  salt: string | Buffer;
+  kdf_params: string | VaultKeyEnvelope['kdfParams'];
+  recovery_wrappers: string | VaultKeyEnvelope['recoveryWrappers'] | null;
+};
+
+type VaultRow = { id: string };
+
 export async function GET() {
   const authResult = await auth();
   const userId = authResult.userId;
@@ -12,7 +21,7 @@ export async function GET() {
   }
 
   try {
-    const result = await query(
+    const result = await query<VaultEnvelopeRow>(
       `SELECT
         wrapped_key,
         salt,
@@ -82,7 +91,7 @@ export async function PUT(request: NextRequest) {
       ? JSON.stringify(envelope.recoveryWrappers)
       : null;
 
-    const result = await query(
+    const result = await query<VaultRow>(
       `UPDATE vaults
        SET wrapped_key = decode($2, 'base64'),
            salt = decode($3, 'base64'),
