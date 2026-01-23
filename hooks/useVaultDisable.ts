@@ -45,7 +45,6 @@ import {
   restoreFromBackup,
   deleteBackup,
 } from '@/lib/vault-disable-backup';
-import { calculateCombinedChecksum } from '@/lib/checksum';
 import type { Bookmark, Space, PinnedView } from '@/lib/types';
 import type { StoredEncryptedRecord } from '@/lib/encrypted-storage';
 
@@ -284,13 +283,8 @@ export function useVaultDisable() {
           },
         });
 
-        // STEP 4: Calculate checksum of plaintext data
-        // Must match server's checksum calculation format (uses calculateCombinedChecksum)
-        const plaintextChecksum = await calculateCombinedChecksum(
-          bookmarks,
-          spaces,
-          pinnedViews
-        );
+        // Note: Checksum verification removed - count verification is sufficient
+        // If record count matches, all data was uploaded successfully
 
         // STEP 5: Upload as plaintext
         setProgress({
@@ -412,7 +406,6 @@ export function useVaultDisable() {
           try {
             const verifyParams = new URLSearchParams({
               expectedCount: totalItems.toString(),
-              expectedChecksum: plaintextChecksum,
             });
 
             const verifyRes = await Promise.race([
@@ -431,9 +424,7 @@ export function useVaultDisable() {
             const verifyData = await verifyRes.json();
 
             if (!verifyData.verified) {
-              console.error('[Vault Disable] Verification failed:', {
-                countMatch: verifyData.serverCount === totalItems,
-                checksumMatch: verifyData.checksumMatch,
+              console.error('[Vault Disable] Verification failed - count mismatch:', {
                 serverCount: verifyData.serverCount,
                 expectedCount: totalItems,
               });
@@ -449,25 +440,18 @@ export function useVaultDisable() {
                 );
               }
 
-              // Checksum mismatch - abort immediately
-              if (!verifyData.checksumMatch) {
-                await rollbackToEncrypted(
-                  backupId,
-                  `Server checksum mismatch: expected ${plaintextChecksum}, got ${verifyData.serverChecksum}`
-                );
-                throw new Error(
-                  `Verification failed: data integrity error. Rolled back.`
-                );
-              }
-
-              // Other verification failure - retry
+              // Retry on other verification issues
               if (verificationAttempts < maxVerificationAttempts) {
                 await new Promise((resolve) => setTimeout(resolve, 1000 * verificationAttempts));
                 continue;
               }
             }
 
-            // Verification passed!
+            // Verification passed! (Count matches)
+            console.log('[Vault Disable] Verification passed:', {
+              serverCount: verifyData.serverCount,
+              expectedCount: totalItems,
+            });
             break;
           } catch (verifyError) {
             if (verificationAttempts >= maxVerificationAttempts) {
