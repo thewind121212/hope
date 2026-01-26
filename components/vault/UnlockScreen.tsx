@@ -3,6 +3,9 @@
 import { useState } from 'react';
 import { Lock, Eye, EyeOff, Loader2, LogOut } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
+import { clearAllVaultData } from '@/lib/auth-cleanup';
+import { useUiStore } from '@/stores/useUiStore';
+import { useResetBookmarksStateSafe } from '@/hooks/useBookmarks';
 import Button from '@/components/ui/Button';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useVaultUnlock } from '@/hooks/useVaultUnlock';
@@ -17,6 +20,8 @@ export function UnlockScreen() {
   const [useRecoveryCode, setUseRecoveryCode] = useState(false);
   const { unlock } = useVaultUnlock();
   const { signOut } = useClerk();
+  const resetBookmarks = useResetBookmarksStateSafe();
+  const resetUiState = useUiStore((state) => state.resetAllState);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,20 +39,19 @@ export function UnlockScreen() {
   };
 
   const handleLogout = async () => {
-    try {
-      // Clear all localStorage data first (prevents any sync triggers)
-      localStorage.clear();
-      // Clear sessionStorage
-      sessionStorage.clear();
-    } finally {
-      try {
-        // Sign out via Clerk
-        await signOut();
-      } finally {
-        // Hard refresh to clear all in-memory state
-        window.location.replace('/');
-      }
-    }
+    // 1. Clear all vault data from storage (synchronized, no race conditions)
+    clearAllVaultData();
+
+    // 2. Reset React state (triggers immediate re-render to empty UI)
+    // This will work if BookmarksProvider is in the DOM tree
+    resetBookmarks?.();
+    resetUiState();
+
+    // 3. Give React time to re-render before redirect
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // 4. Then sign out and redirect
+    await signOut({ redirectUrl: '/' });
   };
 
   if (useRecoveryCode) {
