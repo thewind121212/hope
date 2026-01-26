@@ -11,7 +11,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { runOnboardingMigration } from "@/lib/migration";
 import { runSpacesMigration } from "@/lib/spacesMigration";
-import { getSpaces } from "@/lib/spacesStorage";
+import { useSpaces } from "@/hooks/useSpaces";
 import SpacesSidebar from "@/components/spaces/SpacesSidebar";
 import { useUiStore } from "@/stores/useUiStore";
 import { useVaultStore } from "@/stores/vault-store";
@@ -48,6 +48,7 @@ export default function Home() {
   // Vault state
   const { vaultEnvelope, isUnlocked, currentUserId } = useVaultStore();
   const { syncMode } = useSyncSettingsStore();
+  const { spaces } = useSpaces();
 
   // Local refs (not in store)
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -73,9 +74,9 @@ export default function Home() {
 
   const spacesLabel = useMemo(() => {
     if (selectedSpaceId === "all") return "All spaces";
-    const match = getSpaces().find((space) => space.id === selectedSpaceId);
+    const match = spaces.find((space) => space.id === selectedSpaceId);
     return match?.name ?? "Space";
-  }, [selectedSpaceId]);
+  }, [selectedSpaceId, spaces]);
 
   // Loading state - wait for auth and vault initialization, or during migration check
   if (!isLoaded || sync?.isCheckingMigration) {

@@ -10,10 +10,7 @@ import PinnedViewFormModal from "@/components/spaces/PinnedViewFormModal";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { useSpaces } from "@/hooks/useSpaces";
 import { cn } from "@/lib/utils";
-import {
-  PERSONAL_SPACE_ID,
-  getSpaces,
-} from "@/lib/spacesStorage";
+import { PERSONAL_SPACE_ID } from "@/lib/spacesStorage";
 import { usePinnedViews } from "@/hooks/usePinnedViews";
 import type { Space } from "@/lib/types";
 import { useUiStore } from "@/stores/useUiStore";
@@ -69,9 +66,7 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
 
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const [spacesVersion, setSpacesVersion] = useState(0);
-
-  const [spaces, setSpaces] = useState<Space[]>([]);
+  const { spaces, isLoading: isSpacesLoading } = useSpaces();
 
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [isSpaceFormOpen, setIsSpaceFormOpen] = useState(false);
@@ -96,11 +91,6 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    setSpaces(getSpaces());
-  }, [isHydrated, spacesVersion]);
 
   const bookmarkCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -140,14 +130,12 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
   const handleSubmitSpaceForm = ({ name }: { name: string }) => {
     if (spaceFormMode === "create") {
       const created = addSpace({ name });
-      setSpacesVersion((v) => v + 1);
       setSelectedSpaceId(created.id);
       return;
     }
 
     if (!spaceFormTarget) return;
     updateSpace({ ...spaceFormTarget, name });
-    setSpacesVersion((v) => v + 1);
   };
 
   const requestDeleteSpace = (spaceId: string) => {
@@ -172,7 +160,6 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
     }
 
     deleteSpace(deleteTargetId);
-    setSpacesVersion((v) => v + 1);
 
     if (selectedSpaceId === deleteTargetId) {
       setSelectedSpaceId("all");
@@ -199,7 +186,7 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
     deletePinnedView(id);
   };
 
-  if (!isHydrated) {
+  if (!isHydrated || isSpacesLoading) {
     return <SpacesSidebarSkeleton className={className} />;
   }
 
