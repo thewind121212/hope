@@ -1,3 +1,12 @@
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from "uuid";
+
+jest.mock("uuid", () => ({
+  v4: jest.fn(),
+}));
+
 import { createRef, useRef, useState } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

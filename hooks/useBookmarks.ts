@@ -20,6 +20,7 @@ import {
   getPreview as getPreviewFromStorage,
   savePreview as savePreviewToStorage,
   clearStalePreviews,
+  invalidateAllCaches,
 } from "@/lib/storage";
 import { Bookmark } from "@/lib/types";
 import { toast } from "sonner";
@@ -300,13 +301,39 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Skip the initial render (refreshKey starts at 0)
     if (!initialLoadDone.current || refreshKey === 0) return;
-    
+
     const storedBookmarks = getBookmarks();
     dispatch({
       type: "IMPORT_BOOKMARKS_SUCCESS",
       bookmarks: storedBookmarks,
     });
   }, [refreshKey]);
+
+  // Listen for storage events from other tabs and invalidate cache
+  // This ensures multi-tab coordination: when Tab A writes, Tab B's cache is invalidated and state is refreshed
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleStorageChange = (e: StorageEvent) => {
+      // Check if any bookmark-vault storage keys were modified
+      if (e.key && e.key.startsWith('bookmark-vault-')) {
+        // Invalidate cache to force fresh read from localStorage
+        void invalidateAllCaches();
+
+        // Reload bookmarks from fresh localStorage read
+        const freshBookmarks = getBookmarks();
+
+        // Update component state with fresh data
+        dispatch({
+          type: 'IMPORT_BOOKMARKS_SUCCESS',
+          bookmarks: freshBookmarks,
+        });
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [dispatch]);
 
   const clearError = useCallback(() => {
     dispatch({ type: "CLEAR_ERROR" });

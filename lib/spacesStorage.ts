@@ -1,8 +1,17 @@
 import { v4 as uuidv4 } from "uuid";
 import type { Space } from "@voc/lib/types";
-import { recalculateAndSaveChecksum } from "@/lib/storage";
+import { debouncedRecalculateChecksumExport } from "@/lib/storage";
 
 const SPACES_KEY = "bookmark-vault-spaces";
+
+// ============================================================================
+// IN-MEMORY CACHE TO AVOID REPEATED LOCALSTORAGE PARSING
+// ============================================================================
+let spaceCache: Space[] | null = null;
+
+export function invalidateSpaceCache(): void {
+  spaceCache = null;
+}
 
 export const PERSONAL_SPACE_ID = "personal";
 
@@ -35,13 +44,26 @@ function safeParseSpaces(raw: string | null): Space[] {
 
 function loadSpaces(): Space[] {
   if (typeof window === "undefined") return [];
-  return safeParseSpaces(localStorage.getItem(SPACES_KEY));
+
+  // Return cached spaces if available
+  if (spaceCache !== null) {
+    // Return a COPY to prevent mutations of cached array
+    return Array.from(spaceCache);
+  }
+
+  // Parse from localStorage and cache the result
+  const parsed = safeParseSpaces(localStorage.getItem(SPACES_KEY));
+  spaceCache = parsed;
+  // Return a COPY to prevent mutations of cached array
+  return Array.from(parsed);
 }
 
 function saveSpaces(spaces: Space[]): boolean {
   if (typeof window === "undefined") return false;
   try {
     localStorage.setItem(SPACES_KEY, JSON.stringify(spaces));
+    // Store a COPY in cache, not the caller's reference (defensive against mutations)
+    spaceCache = Array.from(spaces);
     return true;
   } catch {
     return false;
@@ -50,7 +72,7 @@ function saveSpaces(spaces: Space[]): boolean {
 
 export function setSpaces(spaces: Space[]): boolean {
   const saved = saveSpaces(spaces);
-  recalculateAndSaveChecksum();
+  debouncedRecalculateChecksumExport();
   return saved;
 }
 
@@ -61,7 +83,7 @@ export function ensureDefaultSpace(): Space {
 
   const personal = getDefaultPersonalSpace();
   saveSpaces([personal, ...spaces]);
-  recalculateAndSaveChecksum();
+  debouncedRecalculateChecksumExport();
   return personal;
 }
 
@@ -72,7 +94,7 @@ export function getSpaces(): Space[] {
 
   const defaultSpace = getDefaultPersonalSpace();
   saveSpaces([defaultSpace, ...spaces]);
-  recalculateAndSaveChecksum();
+  debouncedRecalculateChecksumExport();
   return [defaultSpace, ...spaces];
 }
 
@@ -87,7 +109,7 @@ export function addSpace(input: { name: string; color?: string }): Space {
 
   const spaces = getSpaces();
   saveSpaces([...spaces, newSpace]);
-  recalculateAndSaveChecksum();
+  debouncedRecalculateChecksumExport();
   return newSpace;
 }
 
@@ -100,14 +122,14 @@ export function updateSpace(space: Space): Space | null {
         : item
     );
     const saved = saveSpaces(updated);
-    recalculateAndSaveChecksum();
+    debouncedRecalculateChecksumExport();
     return saved ? space : null;
   }
 
   const spaces = getSpaces();
   const updated = spaces.map((item) => (item.id === space.id ? space : item));
   const saved = saveSpaces(updated);
-  recalculateAndSaveChecksum();
+  debouncedRecalculateChecksumExport();
   return saved ? space : null;
 }
 
@@ -116,6 +138,13 @@ export function deleteSpace(spaceId: string): boolean {
   const spaces = getSpaces();
   const filtered = spaces.filter((space) => space.id !== spaceId);
   const saved = saveSpaces(filtered);
-  recalculateAndSaveChecksum();
+  debouncedRecalculateChecksumExport();
   return saved;
+}
+
+// ============================================================================
+// TEST UTILITIES
+// ============================================================================
+export function __resetCacheForTesting(): void {
+  spaceCache = null;
 }

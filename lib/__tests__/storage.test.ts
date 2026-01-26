@@ -1,8 +1,12 @@
+/**
+ * @jest-environment jsdom
+ */
 import {
   addBookmark,
   deleteBookmark,
   getBookmarks,
   searchBookmarks,
+  __resetCacheForTesting,
 } from '@voc/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -39,6 +43,9 @@ const baseBookmark: BookmarkInput = {
 };
 
 beforeEach(() => {
+  // Reset the in-memory cache to avoid stale data from previous tests
+  __resetCacheForTesting();
+
   Object.defineProperty(globalThis, 'localStorage', {
     value: createLocalStorageMock(),
     writable: true,
@@ -51,6 +58,8 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.useRealTimers();
+  // Reset cache after each test to ensure clean state
+  __resetCacheForTesting();
 });
 
 describe('storage', () => {
@@ -64,13 +73,22 @@ describe('storage', () => {
     expect(newBookmark.id).toBe('test-id');
     expect(newBookmark.createdAt).toBe(fixedDate.toISOString());
     expect(getBookmarks()).toEqual([newBookmark]);
+
+    // Advance timers for debounced checksum recalculation
+    jest.advanceTimersByTime(500);
   });
 
   it('deleteBookmark removes from storage', () => {
     (uuidv4 as jest.Mock).mockReturnValueOnce('remove-id');
     const bookmark = addBookmark(baseBookmark);
 
+    // Advance timers for debounced checksum from addBookmark
+    jest.advanceTimersByTime(500);
+
     deleteBookmark(bookmark.id);
+
+    // Advance timers for debounced checksum from deleteBookmark
+    jest.advanceTimersByTime(500);
 
     expect(getBookmarks()).toEqual([]);
   });
@@ -87,6 +105,9 @@ describe('storage', () => {
       description: 'The React Framework',
       tags: ['nextjs'],
     });
+
+    // Advance timers for debounced checksum recalculations
+    jest.advanceTimersByTime(500);
 
     const results = searchBookmarks('react');
 

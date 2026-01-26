@@ -54,9 +54,7 @@ describe('POST /api/sync/plaintext/push', () => {
 
   it('auto-converts existing rows to plaintext on update', async () => {
     mockQuery
-      // existing select
-      .mockResolvedValueOnce([{ id: 123, version: 10, data: '{}' }])
-      // update
+      // upsert (INSERT ON CONFLICT)
       .mockResolvedValueOnce([{ version: 11, updated_at: new Date().toISOString() }])
       // sync_settings update
       .mockResolvedValueOnce([])
@@ -81,11 +79,11 @@ describe('POST /api/sync/plaintext/push', () => {
 
     await POST(req);
 
-    const updateSql = mockQuery.mock.calls.find((call) =>
-      String(call[0]).includes('UPDATE records')
+    const upsertSql = mockQuery.mock.calls.find((call) =>
+      String(call[0]).includes('INSERT INTO records')
     )?.[0];
 
-    expect(updateSql).toContain('encrypted = false');
-    expect(updateSql).toContain('ciphertext = NULL');
+    expect(upsertSql).toContain('encrypted = false');
+    expect(upsertSql).toContain('ciphertext = NULL');
   });
 });

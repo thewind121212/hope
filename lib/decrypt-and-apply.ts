@@ -5,7 +5,7 @@ import {
   loadPulledCiphertextRecords,
   type PulledCiphertextRecord,
 } from '@/lib/encrypted-storage';
-import { getBookmarks, setBookmarks } from '@/lib/storage';
+import { getBookmarks, setBookmarks, invalidateAllCaches } from '@/lib/storage';
 import { getSpaces, setSpaces } from '@/lib/spacesStorage';
 import { getPinnedViews, savePinnedViews } from '@/lib/pinnedViewsStorage';
 
@@ -146,6 +146,10 @@ export async function decryptAndApplyPulledE2eRecords(vaultKey: Uint8Array): Pro
   setBookmarks(bookmarks);
   setSpaces(spaces);
   savePinnedViews(pinnedViews);
+
+  // Invalidate caches after writing decrypted data to localStorage
+  // This ensures that subsequent reads will fetch fresh data instead of serving stale cache
+  invalidateAllCaches();
 
   clearPulledCiphertextRecords();
 

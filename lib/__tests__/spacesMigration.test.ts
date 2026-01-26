@@ -1,11 +1,14 @@
+/**
+ * @jest-environment jsdom
+ */
 import { v4 as uuidv4 } from "uuid";
 
 jest.mock("uuid", () => ({
   v4: jest.fn(),
 }));
 
-import { getBookmarks, setBookmarks } from "@voc/lib/storage";
-import { getSpaces, PERSONAL_SPACE_ID } from "@voc/lib/spacesStorage";
+import { getBookmarks, setBookmarks, __resetCacheForTesting as resetBookmarkCache } from "@voc/lib/storage";
+import { getSpaces, PERSONAL_SPACE_ID, __resetCacheForTesting as resetSpaceCache } from "@voc/lib/spacesStorage";
 import { runSpacesMigration } from "@voc/lib/spacesMigration";
 
 const createLocalStorageMock = () => {
@@ -36,12 +39,16 @@ describe("spacesMigration", () => {
 
     (uuidv4 as jest.Mock).mockReset().mockReturnValue("id");
 
+    resetBookmarkCache();
+    resetSpaceCache();
     jest.useFakeTimers();
     jest.setSystemTime(fixedDate);
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    resetBookmarkCache();
+    resetSpaceCache();
   });
 
   it("creates Personal space when missing", () => {

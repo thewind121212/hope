@@ -1,8 +1,17 @@
 import { v4 as uuidv4 } from "uuid";
 import type { PinnedView } from "@voc/lib/types";
-import { recalculateAndSaveChecksum } from "@/lib/storage";
+import { debouncedRecalculateChecksumExport } from "@/lib/storage";
 
 const PINNED_VIEWS_KEY = "bookmark-vault-pinned-views";
+
+// ============================================================================
+// IN-MEMORY CACHE TO AVOID REPEATED LOCALSTORAGE PARSING
+// ============================================================================
+let viewCache: PinnedView[] | null = null;
+
+export function invalidateViewCache(): void {
+  viewCache = null;
+}
 
 function safeParsePinnedViews(raw: string | null): PinnedView[] {
   if (!raw) return [];
@@ -30,14 +39,28 @@ function safeParsePinnedViews(raw: string | null): PinnedView[] {
 
 function loadPinnedViews(): PinnedView[] {
   if (typeof window === "undefined") return [];
-  return safeParsePinnedViews(localStorage.getItem(PINNED_VIEWS_KEY));
+
+  // Return cached views if available
+  if (viewCache !== null) {
+    // Return a COPY to prevent mutations of cached array
+    return Array.from(viewCache);
+  }
+
+  // Parse from localStorage and cache the result
+  const parsed = safeParsePinnedViews(localStorage.getItem(PINNED_VIEWS_KEY));
+  viewCache = parsed;
+  // Return a COPY to prevent mutations of cached array
+  return Array.from(parsed);
 }
 
 export function savePinnedViews(views: PinnedView[]): boolean {
   if (typeof window === "undefined") return false;
   try {
     localStorage.setItem(PINNED_VIEWS_KEY, JSON.stringify(views));
-    recalculateAndSaveChecksum();
+    // Store a COPY in cache, not the caller's reference (defensive against mutations)
+    viewCache = Array.from(views);
+    // Debounced checksum update (batches rapid operations)
+    debouncedRecalculateChecksumExport();
     return true;
   } catch {
     return false;
@@ -83,4 +106,11 @@ export function updatePinnedView(next: PinnedView): PinnedView | null {
   const updated = existing.map((view) => (view.id === next.id ? next : view));
   const saved = savePinnedViews(updated);
   return saved ? next : null;
+}
+
+// ============================================================================
+// TEST UTILITIES
+// ============================================================================
+export function __resetCacheForTesting(): void {
+  viewCache = null;
 }

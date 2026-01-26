@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { render, fireEvent } from "@testing-library/react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 

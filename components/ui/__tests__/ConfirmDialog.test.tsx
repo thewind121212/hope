@@ -1,4 +1,11 @@
-import { describe, it, expect, vi } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from "uuid";
+
+jest.mock("uuid", () => ({
+  v4: jest.fn(),
+}));
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfirmDialog } from '@voc/components/ui/ConfirmDialog';
@@ -6,8 +13,8 @@ import { ConfirmDialog } from '@voc/components/ui/ConfirmDialog';
 describe('ConfirmDialog', () => {
   const defaultProps = {
     isOpen: true,
-    onClose: vi.fn(),
-    onConfirm: vi.fn(),
+    onClose: jest.fn(),
+    onConfirm: jest.fn(),
     title: 'Delete Bookmark',
     description: 'Are you sure you want to delete this bookmark?',
   };
@@ -26,8 +33,8 @@ describe('ConfirmDialog', () => {
   });
 
   it('calls onConfirm and closes when confirm clicked', async () => {
-    const onClose = vi.fn();
-    const onConfirm = vi.fn();
+    const onClose = jest.fn();
+    const onConfirm = jest.fn();
 
     render(<ConfirmDialog {...defaultProps} onClose={onClose} onConfirm={onConfirm} />);
 
@@ -39,8 +46,8 @@ describe('ConfirmDialog', () => {
   });
 
   it('calls onClose when cancel clicked', async () => {
-    const onClose = vi.fn();
-    const onConfirm = vi.fn();
+    const onClose = jest.fn();
+    const onConfirm = jest.fn();
 
     render(<ConfirmDialog {...defaultProps} onClose={onClose} onConfirm={onConfirm} />);
 
@@ -52,7 +59,7 @@ describe('ConfirmDialog', () => {
   });
 
   it('calls onClose when backdrop clicked', async () => {
-    const onClose = vi.fn();
+    const onClose = jest.fn();
 
     render(<ConfirmDialog {...defaultProps} onClose={onClose} />);
 
@@ -102,7 +109,7 @@ describe('ConfirmDialog', () => {
   });
 
   it('confirms on Enter key press', async () => {
-    const onConfirm = vi.fn();
+    const onConfirm = jest.fn();
 
     render(<ConfirmDialog {...defaultProps} onConfirm={onConfirm} />);
 

@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
 import {
   hasSeenOnboarding,
   markOnboardingSeen,
@@ -31,7 +33,7 @@ Object.defineProperty(global, 'localStorage', {
 describe('onboarding', () => {
   beforeEach(() => {
     localStorageMock.clear();
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('hasSeenOnboarding', () => {

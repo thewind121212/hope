@@ -8,6 +8,57 @@ const PREVIEW_CACHE_KEY = 'bookmark-vault-previews';
 const PREVIEW_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 const CHECKSUM_META_KEY = 'bookmark-vault-checksum-meta';
 
+// ============================================================================
+// IN-MEMORY CACHE TO AVOID REPEATED LOCALSTORAGE PARSING
+// ============================================================================
+// Cache bookmarks array in memory to prevent repeated JSON.parse calls
+// on every bookmark operation. Cache is invalidated when data is written
+// to localStorage or when another tab modifies storage.
+let bookmarkCache: Bookmark[] | null = null;
+
+export function invalidateBookmarkCache(): void {
+  bookmarkCache = null;
+}
+
+/**
+ * Test-only utility to reset the bookmark cache.
+ * Used by test setup to ensure no stale cache between tests.
+ */
+export function __resetCacheForTesting(): void {
+  bookmarkCache = null;
+}
+
+export function invalidateAllCaches(): void {
+  bookmarkCache = null;
+
+  // Invalidate space and view caches (lazy imports to avoid circular dependencies)
+  // These must be imported at call time, not module load time
+  try {
+    // Dynamic imports avoid circular dependency issues
+    // Caches are invalidated best-effort: if either import fails, we still invalidated bookmarks
+    Promise.all([
+      import('@/lib/spacesStorage').then(m => {
+        if (m.invalidateSpaceCache) {
+          m.invalidateSpaceCache();
+        }
+      }).catch(() => {
+        // Ignore import errors
+      }),
+      import('@/lib/pinnedViewsStorage').then(m => {
+        if (m.invalidateViewCache) {
+          m.invalidateViewCache();
+        }
+      }).catch(() => {
+        // Ignore import errors
+      }),
+    ]).catch(() => {
+      // Ignore any errors from Promise.all
+    });
+  } catch {
+    // Ignore
+  }
+}
+
 type StoredBookmarks = {
   version: number;
   data: Bookmark[];
@@ -50,7 +101,18 @@ const loadBookmarks = (): Bookmark[] => {
   if (typeof window === 'undefined') {
     return [];
   }
-  return parseBookmarks(localStorage.getItem(STORAGE_KEY));
+
+  // Return cached bookmarks if available
+  if (bookmarkCache !== null) {
+    // Return a COPY to prevent mutations of cached array
+    return Array.from(bookmarkCache);
+  }
+
+  // Parse from localStorage and cache the result
+  const parsed = parseBookmarks(localStorage.getItem(STORAGE_KEY));
+  bookmarkCache = parsed;
+  // Return a COPY to prevent mutations of cached array
+  return Array.from(parsed);
 };
 
 const saveBookmarks = (bookmarks: Bookmark[]): boolean => {
@@ -63,6 +125,8 @@ const saveBookmarks = (bookmarks: Bookmark[]): boolean => {
       data: bookmarks,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    // Store a COPY in cache, not the caller's reference (defensive against mutations)
+    bookmarkCache = Array.from(bookmarks);
     return true;
   } catch {
     return false;
@@ -87,8 +151,8 @@ export function addBookmark(
   const bookmarks = loadBookmarks();
   saveBookmarks([...bookmarks, newBookmark]);
 
-  // Update checksum after adding
-  recalculateAndSaveChecksum();
+  // Debounced checksum update (batches rapid operations)
+  debouncedRecalculateChecksum();
 
   return newBookmark;
 }
@@ -98,8 +162,8 @@ export function deleteBookmark(id: string): void {
   const filtered = bookmarks.filter((b) => b.id !== id);
   saveBookmarks(filtered);
 
-  // Update checksum after deleting
-  recalculateAndSaveChecksum();
+  // Debounced checksum update (batches rapid operations)
+  debouncedRecalculateChecksum();
 }
 
 export function deleteBookmarks(ids: string[]): void {
@@ -107,8 +171,8 @@ export function deleteBookmarks(ids: string[]): void {
   const filtered = bookmarks.filter((b) => !ids.includes(b.id));
   saveBookmarks(filtered);
 
-  // Update checksum after deleting
-  recalculateAndSaveChecksum();
+  // Debounced checksum update (batches rapid operations)
+  debouncedRecalculateChecksum();
 }
 
 export function updateBookmark(bookmark: Bookmark): Bookmark | null {
@@ -118,8 +182,8 @@ export function updateBookmark(bookmark: Bookmark): Bookmark | null {
   );
   const saved = saveBookmarks(updated);
 
-  // Update checksum after updating
-  recalculateAndSaveChecksum();
+  // Debounced checksum update (batches rapid operations)
+  debouncedRecalculateChecksum();
 
   return saved ? bookmark : null;
 }
@@ -127,8 +191,8 @@ export function updateBookmark(bookmark: Bookmark): Bookmark | null {
 export function setBookmarks(bookmarks: Bookmark[]): boolean {
   const saved = saveBookmarks(bookmarks);
 
-  // Update checksum after setting
-  recalculateAndSaveChecksum();
+  // Debounced checksum update (batches rapid operations)
+  debouncedRecalculateChecksum();
 
   return saved;
 }
@@ -215,6 +279,33 @@ export function clearStalePreviews(): void {
 }
 
 // ============================================================================
+// DEBOUNCE UTILITY FOR CHECKSUM RECALCULATION
+// ============================================================================
+
+/**
+ * Simple debounce implementation for checksum recalculation.
+ * 500ms debounce time is shorter than sync debounce (2s), ensuring checksums
+ * are fresh before sync happens. If app crashes before debounce runs, checksum
+ * will be stale but derivable from data (eventual consistency is acceptable).
+ */
+function createDebounce<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  delayMs: number
+): T {
+  let timeoutId: NodeJS.Timeout | null = null;
+
+  return ((...args: unknown[]) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => {
+      fn(...args);
+      timeoutId = null;
+    }, delayMs);
+  }) as T;
+}
+
+// ============================================================================
 // CHECKSUM STORAGE
 // ============================================================================
 
@@ -274,12 +365,31 @@ export async function recalculateAndSaveChecksum(): Promise<void> {
     const bookmarks = getBookmarks();
 
     // Import these dynamically to avoid circular dependencies
-    const { getSpaces } = await import('@/lib/spacesStorage');
-    const { getPinnedViews } = await import('@/lib/pinnedViewsStorage');
-    const spaces = getSpaces();
-    const pinnedViews = getPinnedViews();
+    // If imports fail, use empty fallback to prevent complete failure
+    let spaces: unknown[] = [];
+    let pinnedViews: unknown[] = [];
 
-    // Calculate combined checksum
+    try {
+      const spacesModule = await import('@/lib/spacesStorage');
+      if (spacesModule.getSpaces) {
+        spaces = spacesModule.getSpaces();
+      }
+    } catch (error) {
+      console.warn('Failed to import spacesStorage, using empty fallback:', error);
+      spaces = [];
+    }
+
+    try {
+      const viewsModule = await import('@/lib/pinnedViewsStorage');
+      if (viewsModule.getPinnedViews) {
+        pinnedViews = viewsModule.getPinnedViews();
+      }
+    } catch (error) {
+      console.warn('Failed to import pinnedViewsStorage, using empty fallback:', error);
+      pinnedViews = [];
+    }
+
+    // Calculate combined checksum (with fallback data if imports failed)
     const checksum = await calculateCombinedChecksum(
       bookmarks,
       spaces,
@@ -289,8 +399,8 @@ export async function recalculateAndSaveChecksum(): Promise<void> {
     // Calculate the maximum updatedAt from all records (for proper sync comparison)
     const allRecords = [
       ...bookmarks.map(b => b.updatedAt),
-      ...spaces.map(s => s.updatedAt),
-      ...pinnedViews.map(v => v.updatedAt),
+      ...(Array.isArray(spaces) ? spaces.filter(s => s && typeof s === 'object' && 'updatedAt' in s).map((s: any) => s.updatedAt) : []),
+      ...(Array.isArray(pinnedViews) ? pinnedViews.filter(v => v && typeof v === 'object' && 'updatedAt' in v).map((v: any) => v.updatedAt) : []),
     ].filter((dt): dt is string => dt !== undefined);
 
     const maxUpdatedAt = allRecords.length > 0
@@ -309,6 +419,25 @@ export async function recalculateAndSaveChecksum(): Promise<void> {
       },
     });
   } catch (error) {
-    console.error('Failed to recalculate checksum:', error);
+    console.error('Failed to recalculate checksum, will retry on next operation:', error);
+    // Silently fail - checksum will be recalculated on next CRUD operation
   }
+}
+
+/**
+ * Debounced checksum recalculation (500ms).
+ * Batches rapid operations (add/edit/delete) into a single checksum calculation.
+ * 500ms debounce is shorter than sync debounce (2s), ensuring checksums are fresh before sync.
+ * Fire-and-forget: don't await the result, data is already written to localStorage.
+ */
+const debouncedRecalculateChecksum = createDebounce(() => {
+  recalculateAndSaveChecksum();
+}, 500);
+
+/**
+ * Export debounced checksum recalculation for use across storage modules.
+ * Use this instead of calling recalculateAndSaveChecksum() directly for CRUD operations.
+ */
+export function debouncedRecalculateChecksumExport(): void {
+  debouncedRecalculateChecksum();
 }

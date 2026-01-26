@@ -11,7 +11,9 @@ const customJestConfig = {
     '^@/(.*)$': '<rootDir>/$1',
     '^@voc/(.*)$': '<rootDir>/$1',
   },
-  transformIgnorePatterns: ["/node_modules/(?!(uuid)/)"],
+  transformIgnorePatterns: [
+    '/node_modules/(?!(uuid)/)([a-zA-Z0-9\\-]+)',
+  ],
 };
 
 module.exports = createJestConfig(customJestConfig);

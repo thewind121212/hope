@@ -1,4 +1,6 @@
-import { describe, it, expect } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
 import { demoBookmarks, getDemoBookmarksWithIds } from '@voc/lib/demoBookmarks';
 import type { Bookmark } from '@voc/lib/types';
 

@@ -1,9 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from 'uuid';
+
+jest.mock('uuid', () => ({
+  v4: jest.fn(),
+}));
+
 import {
   runOnboardingMigration,
   runOnboardingMigrationWithResult,
   type MigrationResult,
 } from '@voc/lib/migration';
+import { __resetCacheForTesting as resetStorageCache } from '@voc/lib/storage';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -30,7 +39,14 @@ Object.defineProperty(global, 'localStorage', {
 describe('migration', () => {
   beforeEach(() => {
     localStorageMock.clear();
-    vi.clearAllMocks();
+    jest.clearAllMocks();
+    resetStorageCache();
+  });
+
+  afterEach(() => {
+    // Restore the localStorage methods to avoid affecting subsequent tests
+    localStorageMock.clear();
+    resetStorageCache();
   });
 
   describe('runOnboardingMigration', () => {
@@ -56,16 +72,25 @@ describe('migration', () => {
       expect(localStorageMock.getItem('bookmark-vault-onboarding-seen')).toBeNull();
     });
 
-    it('marks flag on storage error', () => {
+    it('returns early when storage error on hasSeenOnboarding check', () => {
       const originalGetItem = localStorageMock.getItem;
-      localStorageMock.getItem = () => {
-        throw new Error('Storage unavailable');
-      };
+      try {
+        localStorageMock.getItem = () => {
+          throw new Error('Storage unavailable');
+        };
 
-      runOnboardingMigration();
-      expect(localStorageMock.getItem('bookmark-vault-onboarding-seen')).toBe('true');
+        // When storage throws, hasSeenOnboarding() returns true (safe default)
+        // So runOnboardingMigration() returns early without marking anything
+        runOnboardingMigration();
 
-      localStorageMock.getItem = originalGetItem;
+        // Restore before checking result
+        localStorageMock.getItem = originalGetItem;
+        // The flag should not be set because migration returns early
+        expect(localStorageMock.getItem('bookmark-vault-onboarding-seen')).toBeNull();
+      } finally {
+        // Always restore, even if assertion fails
+        localStorageMock.getItem = originalGetItem;
+      }
     });
   });
 

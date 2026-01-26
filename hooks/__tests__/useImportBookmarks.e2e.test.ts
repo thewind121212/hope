@@ -1,4 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from "uuid";
+
+jest.mock("uuid", () => ({
+  v4: jest.fn(),
+}));
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useImportBookmarks } from '@/hooks/useImportBookmarks';
 import { Bookmark } from '@/lib/types';
@@ -35,10 +42,10 @@ const mockImportData = {
 };
 
 describe('useImportBookmarks E2E', () => {
-  const mockImportBookmarks = vi.fn();
+  const mockImportBookmarks = jest.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('loads and validates JSON file correctly', async () => {

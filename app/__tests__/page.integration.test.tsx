@@ -1,10 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from "uuid";
+
+jest.mock("uuid", () => ({
+  v4: jest.fn(),
+}));
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Home from '@/app/page';
 
 // Mock all dependencies
-vi.mock('@/hooks/useBookmarks', () => ({
+jest.mock('@/hooks/useBookmarks', () => ({
   useBookmarks: () => ({
     bookmarks: [],
     allBookmarks: [],
@@ -12,30 +19,30 @@ vi.mock('@/hooks/useBookmarks', () => ({
     pendingDeletes: new Set(),
     isLoading: false,
     errorMessage: null,
-    addBookmark: vi.fn(() => ({ success: true, bookmark: {} })),
-    deleteBookmark: vi.fn(() => ({ success: true })),
-    updateBookmark: vi.fn(() => ({ success: true })),
-    importBookmarks: vi.fn(() => Promise.resolve({ success: true })),
-    clearError: vi.fn(),
+    addBookmark: jest.fn(() => ({ success: true, bookmark: {} })),
+    deleteBookmark: jest.fn(() => ({ success: true })),
+    updateBookmark: jest.fn(() => ({ success: true })),
+    importBookmarks: jest.fn(() => Promise.resolve({ success: true })),
+    clearError: jest.fn(),
   }),
   BookmarksProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('@/hooks/useKeyboardShortcuts', () => ({
-  useKeyboardShortcuts: vi.fn(),
+jest.mock('@/hooks/useKeyboardShortcuts', () => ({
+  useKeyboardShortcuts: jest.fn(),
 }));
 
-vi.mock('@/lib/migration', () => ({
-  runOnboardingMigration: vi.fn(),
+jest.mock('@/lib/migration', () => ({
+  runOnboardingMigration: jest.fn(),
 }));
 
-vi.mock('@/components/onboarding/OnboardingPanel', () => ({
+jest.mock('@/components/onboarding/OnboardingPanel', () => ({
   OnboardingPanel: () => null,
 }));
 
 describe('Home Page Integration', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('renders the main page structure', () => {

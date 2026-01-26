@@ -1,11 +1,16 @@
 /**
+ * @jest-environment jsdom
+ *
  * Vault Disable Integration Tests
  *
  * Tests the two-phase commit pattern with comprehensive failure scenarios
  * and success path verification.
  */
+import { v4 as uuidv4 } from "uuid";
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+jest.mock("uuid", () => ({
+  v4: jest.fn(),
+}));
 import {
   createBackupCheckpoint,
   restoreFromBackup,
@@ -54,7 +59,7 @@ describe('Vault Disable - Two-Phase Commit', () => {
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear();
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -172,7 +177,7 @@ describe('Vault Disable - Two-Phase Commit', () => {
       const vaultEnvelope = { salt: 'salt', wrappedKey: 'key' };
 
       // Mock localStorage.setItem to throw quota exceeded error
-      const mockSetItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      const mockSetItem = jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new Error('QuotaExceededError');
       });
 

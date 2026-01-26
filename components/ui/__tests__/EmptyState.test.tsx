@@ -1,4 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EmptyState from '@voc/components/ui/EmptyState';
@@ -17,7 +19,7 @@ describe('EmptyState', () => {
   });
 
   it('renders action button when provided', () => {
-    const onAction = vi.fn();
+    const onAction = jest.fn();
 
     render(
       <EmptyState
@@ -32,7 +34,7 @@ describe('EmptyState', () => {
   });
 
   it('calls onAction when button clicked', async () => {
-    const onAction = vi.fn();
+    const onAction = jest.fn();
 
     render(
       <EmptyState

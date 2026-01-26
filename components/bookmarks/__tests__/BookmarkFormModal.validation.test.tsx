@@ -1,22 +1,30 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from 'uuid';
+
+jest.mock('uuid', () => ({
+  v4: jest.fn(),
+}));
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import BookmarkFormModal from '@/components/bookmarks/BookmarkFormModal';
 import { Bookmark } from '@/lib/types';
 
 // Mock dependencies
-vi.mock('@/hooks/useBookmarks', () => ({
-  useBookmarks: vi.fn(() => ({
-    addBookmark: vi.fn(() => ({ success: true, bookmark: {} })),
-    updateBookmark: vi.fn(() => ({ success: true })),
+jest.mock('@/hooks/useBookmarks', () => ({
+  useBookmarks: jest.fn(() => ({
+    addBookmark: jest.fn(() => ({ success: true, bookmark: {} })),
+    updateBookmark: jest.fn(() => ({ success: true })),
     isLoading: false,
     errorMessage: null,
-    clearError: vi.fn(),
+    clearError: jest.fn(),
   })),
 }));
 
-vi.mock('@/hooks/useBookmarkForm', () => ({
-  useBookmarkForm: vi.fn(() => ({
+jest.mock('@/hooks/useBookmarkForm', () => ({
+  useBookmarkForm: jest.fn(() => ({
     form: {
       title: '',
       url: '',
@@ -28,17 +36,17 @@ vi.mock('@/hooks/useBookmarkForm', () => ({
     isLoading: false,
     isValid: false,
     errorMessage: null,
-    resetForm: vi.fn(),
-    handleChange: vi.fn(),
-    handleSubmit: vi.fn((e) => e.preventDefault()),
-    registerField: vi.fn(),
+    resetForm: jest.fn(),
+    handleChange: jest.fn(),
+    handleSubmit: jest.fn((e) => e.preventDefault()),
+    registerField: jest.fn(),
   })),
 }));
 
 import { useBookmarkForm } from '@/hooks/useBookmarkForm';
 
 describe('BookmarkFormModal Validation', () => {
-  const mockOnClose = vi.fn();
+  const mockOnClose = jest.fn();
   const defaultProps = {
     isOpen: true,
     onClose: mockOnClose,
@@ -46,20 +54,20 @@ describe('BookmarkFormModal Validation', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('shows modal with correct title for create mode', () => {
-    (useBookmarkForm as vi.Mock).mockReturnValue({
+    (useBookmarkForm as jest.Mock).mockReturnValue({
       form: { title: '', url: '', description: '', tags: '', color: '' },
       errors: {},
       isLoading: false,
       isValid: false,
       errorMessage: null,
-      resetForm: vi.fn(),
-      handleChange: vi.fn(),
-      handleSubmit: vi.fn((e) => e.preventDefault()),
-      registerField: vi.fn(),
+      resetForm: jest.fn(),
+      handleChange: jest.fn(),
+      handleSubmit: jest.fn((e) => e.preventDefault()),
+      registerField: jest.fn(),
     });
 
     render(<BookmarkFormModal {...defaultProps} />);
@@ -77,16 +85,16 @@ describe('BookmarkFormModal Validation', () => {
       createdAt: '2024-01-01',
     };
 
-    (useBookmarkForm as vi.Mock).mockReturnValue({
+    (useBookmarkForm as jest.Mock).mockReturnValue({
       form: bookmark,
       errors: {},
       isLoading: false,
       isValid: true,
       errorMessage: null,
-      resetForm: vi.fn(),
-      handleChange: vi.fn(),
-      handleSubmit: vi.fn((e) => e.preventDefault()),
-      registerField: vi.fn(),
+      resetForm: jest.fn(),
+      handleChange: jest.fn(),
+      handleSubmit: jest.fn((e) => e.preventDefault()),
+      registerField: jest.fn(),
     });
 
     render(<BookmarkFormModal {...defaultProps} mode="edit" initialBookmark={bookmark} />);
@@ -96,18 +104,18 @@ describe('BookmarkFormModal Validation', () => {
   });
 
   it('disables submit button when form has errors', () => {
-    const mockHandleSubmit = vi.fn((e) => e.preventDefault());
+    const mockHandleSubmit = jest.fn((e) => e.preventDefault());
 
-    (useBookmarkForm as vi.Mock).mockReturnValue({
+    (useBookmarkForm as jest.Mock).mockReturnValue({
       form: { title: '', url: '', description: '', tags: '', color: '' },
       errors: { title: 'Title is required', url: 'URL is required' },
       isLoading: false,
       isValid: false,
       errorMessage: null,
-      resetForm: vi.fn(),
-      handleChange: vi.fn(),
+      resetForm: jest.fn(),
+      handleChange: jest.fn(),
       handleSubmit: mockHandleSubmit,
-      registerField: vi.fn(),
+      registerField: jest.fn(),
     });
 
     render(<BookmarkFormModal {...defaultProps} />);
@@ -118,16 +126,16 @@ describe('BookmarkFormModal Validation', () => {
   });
 
   it('disables submit button when form is invalid (empty required fields)', () => {
-    (useBookmarkForm as vi.Mock).mockReturnValue({
+    (useBookmarkForm as jest.Mock).mockReturnValue({
       form: { title: '', url: '', description: '', tags: '', color: '' },
       errors: {},
       isLoading: false,
       isValid: false,
       errorMessage: null,
-      resetForm: vi.fn(),
-      handleChange: vi.fn(),
-      handleSubmit: vi.fn((e) => e.preventDefault()),
-      registerField: vi.fn(),
+      resetForm: jest.fn(),
+      handleChange: jest.fn(),
+      handleSubmit: jest.fn((e) => e.preventDefault()),
+      registerField: jest.fn(),
     });
 
     render(<BookmarkFormModal {...defaultProps} />);
@@ -137,18 +145,18 @@ describe('BookmarkFormModal Validation', () => {
   });
 
   it('enables submit button when form is valid', () => {
-    const mockHandleSubmit = vi.fn((e) => e.preventDefault());
+    const mockHandleSubmit = jest.fn((e) => e.preventDefault());
 
-    (useBookmarkForm as vi.Mock).mockReturnValue({
+    (useBookmarkForm as jest.Mock).mockReturnValue({
       form: { title: 'Test', url: 'https://test.com', description: '', tags: '', color: '' },
       errors: {},
       isLoading: false,
       isValid: true,
       errorMessage: null,
-      resetForm: vi.fn(),
-      handleChange: vi.fn(),
+      resetForm: jest.fn(),
+      handleChange: jest.fn(),
       handleSubmit: mockHandleSubmit,
-      registerField: vi.fn(),
+      registerField: jest.fn(),
     });
 
     render(<BookmarkFormModal {...defaultProps} />);
@@ -158,16 +166,16 @@ describe('BookmarkFormModal Validation', () => {
   });
 
   it('calls onClose when cancel button clicked', async () => {
-    (useBookmarkForm as vi.Mock).mockReturnValue({
+    (useBookmarkForm as jest.Mock).mockReturnValue({
       form: { title: '', url: '', description: '', tags: '', color: '' },
       errors: {},
       isLoading: false,
       isValid: false,
       errorMessage: null,
-      resetForm: vi.fn(),
-      handleChange: vi.fn(),
-      handleSubmit: vi.fn((e) => e.preventDefault()),
-      registerField: vi.fn(),
+      resetForm: jest.fn(),
+      handleChange: jest.fn(),
+      handleSubmit: jest.fn((e) => e.preventDefault()),
+      registerField: jest.fn(),
     });
 
     render(<BookmarkFormModal {...defaultProps} />);
@@ -179,16 +187,16 @@ describe('BookmarkFormModal Validation', () => {
   });
 
   it('shows error message when present', () => {
-    (useBookmarkForm as vi.Mock).mockReturnValue({
+    (useBookmarkForm as jest.Mock).mockReturnValue({
       form: { title: '', url: '', description: '', tags: '', color: '' },
       errors: {},
       isLoading: false,
       isValid: false,
       errorMessage: 'Something went wrong',
-      resetForm: vi.fn(),
-      handleChange: vi.fn(),
-      handleSubmit: vi.fn((e) => e.preventDefault()),
-      registerField: vi.fn(),
+      resetForm: jest.fn(),
+      handleChange: jest.fn(),
+      handleSubmit: jest.fn((e) => e.preventDefault()),
+      registerField: jest.fn(),
     });
 
     render(<BookmarkFormModal {...defaultProps} />);
@@ -198,16 +206,16 @@ describe('BookmarkFormModal Validation', () => {
   });
 
   it('does not render when closed', () => {
-    (useBookmarkForm as vi.Mock).mockReturnValue({
+    (useBookmarkForm as jest.Mock).mockReturnValue({
       form: { title: '', url: '', description: '', tags: '', color: '' },
       errors: {},
       isLoading: false,
       isValid: false,
       errorMessage: null,
-      resetForm: vi.fn(),
-      handleChange: vi.fn(),
-      handleSubmit: vi.fn((e) => e.preventDefault()),
-      registerField: vi.fn(),
+      resetForm: jest.fn(),
+      handleChange: jest.fn(),
+      handleSubmit: jest.fn((e) => e.preventDefault()),
+      registerField: jest.fn(),
     });
 
     const { container } = render(<BookmarkFormModal {...defaultProps} isOpen={false} />);

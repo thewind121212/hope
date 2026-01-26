@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { renderHook, act } from '@testing-library/react';
 import { useComprehensiveClearFilters } from '@voc/hooks/useComprehensiveClearFilters';
 

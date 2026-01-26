@@ -1,3 +1,11 @@
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from "uuid";
+
+jest.mock("uuid", () => ({
+  v4: jest.fn(),
+}));
 import { renderHook, act } from '@testing-library/react';
 import { useBookmarks, BookmarksProvider } from '@voc/hooks/useBookmarks';
 

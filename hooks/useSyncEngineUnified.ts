@@ -30,7 +30,7 @@ import {
   getPendingCount as getPlaintextPendingCount,
   clearOutbox as clearPlaintextOutbox,
 } from '@/lib/plaintext-sync-engine';
-import { getBookmarks, setBookmarks, getStoredChecksumMeta, saveChecksumMeta, setSkipChecksumRecalculation, type ChecksumMeta } from '@/lib/storage';
+import { getBookmarks, setBookmarks, getStoredChecksumMeta, saveChecksumMeta, setSkipChecksumRecalculation, invalidateAllCaches, type ChecksumMeta } from '@/lib/storage';
 import { getSpaces, setSpaces } from '@/lib/spacesStorage';
 import { getPinnedViews, savePinnedViews } from '@/lib/pinnedViewsStorage';
 
@@ -79,6 +79,9 @@ function updateLocalSyncVersions(results: { recordId: string; version: number; u
     }
   }
   if (viewsUpdated) savePinnedViews(views);
+
+  // Invalidate caches after updating sync versions in localStorage
+  invalidateAllCaches();
 }
 
 interface SyncState {
@@ -381,6 +384,10 @@ export function useSyncEngine(): UseSyncEngineReturn {
     setBookmarks(bookmarks);
     setSpaces(spaces);
     savePinnedViews(pinnedViews);
+
+    // Invalidate caches after writing pulled records to localStorage
+    // This ensures that subsequent reads will fetch fresh data instead of serving stale cache
+    invalidateAllCaches();
 
     // Trigger UI refresh so components re-render
     triggerRefresh();

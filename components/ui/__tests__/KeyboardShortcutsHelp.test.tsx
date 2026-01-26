@@ -1,4 +1,11 @@
-import { describe, it, expect } from 'vitest';
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from "uuid";
+
+jest.mock("uuid", () => ({
+  v4: jest.fn(),
+}));
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { KeyboardShortcutsHelp } from '@voc/components/ui/KeyboardShortcutsHelp';

@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { v4 as uuidv4 } from "uuid";
 
 jest.mock("uuid", () => ({
@@ -11,6 +14,7 @@ import {
   ensureDefaultSpace,
   getSpaces,
   updateSpace,
+  __resetCacheForTesting as resetSpaceCache,
 } from "@voc/lib/spacesStorage";
 
 const createLocalStorageMock = () => {
@@ -41,17 +45,22 @@ describe("spacesStorage", () => {
 
     (uuidv4 as jest.Mock).mockReset().mockReturnValue("space-id");
 
+    resetSpaceCache();
     jest.useFakeTimers();
     jest.setSystemTime(fixedDate);
   });
 
   afterEach(() => {
     jest.useRealTimers();
+    resetSpaceCache();
   });
 
   it("ensures Personal space exists", () => {
     const personal = ensureDefaultSpace();
     expect(personal.id).toBe(PERSONAL_SPACE_ID);
+
+    // Advance timers for debounced checksum recalculation
+    jest.advanceTimersByTime(500);
 
     const spaces = getSpaces();
     expect(spaces.some((s) => s.id === PERSONAL_SPACE_ID)).toBe(true);
@@ -59,8 +68,15 @@ describe("spacesStorage", () => {
 
   it("adds a new space", () => {
     ensureDefaultSpace();
+
+    // Advance timers for debounced checksum from ensureDefaultSpace
+    jest.advanceTimersByTime(500);
+
     const created = addSpace({ name: "Work" });
     expect(created.name).toBe("Work");
+
+    // Advance timers for debounced checksum from addSpace
+    jest.advanceTimersByTime(500);
 
     const spaces = getSpaces();
     expect(spaces.find((s) => s.id === created.id)?.name).toBe("Work");
@@ -68,24 +84,50 @@ describe("spacesStorage", () => {
 
   it("updates a space", () => {
     ensureDefaultSpace();
+
+    // Advance timers for debounced checksum from ensureDefaultSpace
+    jest.advanceTimersByTime(500);
+
     const created = addSpace({ name: "Work" });
 
+    // Advance timers for debounced checksum from addSpace
+    jest.advanceTimersByTime(500);
+
     const updated = updateSpace({ ...created, name: "Work 2" });
+
+    // Advance timers for debounced checksum from updateSpace
+    jest.advanceTimersByTime(500);
+
     expect(updated?.name).toBe("Work 2");
     expect(getSpaces().find((s) => s.id === created.id)?.name).toBe("Work 2");
   });
 
   it("does not delete Personal space", () => {
     ensureDefaultSpace();
+
+    // Advance timers for debounced checksum from ensureDefaultSpace
+    jest.advanceTimersByTime(500);
+
     expect(deleteSpace(PERSONAL_SPACE_ID)).toBe(false);
     expect(getSpaces().some((s) => s.id === PERSONAL_SPACE_ID)).toBe(true);
   });
 
   it("deletes a non-personal space", () => {
     ensureDefaultSpace();
+
+    // Advance timers for debounced checksum from ensureDefaultSpace
+    jest.advanceTimersByTime(500);
+
     const created = addSpace({ name: "Work" });
 
+    // Advance timers for debounced checksum from addSpace
+    jest.advanceTimersByTime(500);
+
     expect(deleteSpace(created.id)).toBe(true);
+
+    // Advance timers for debounced checksum from deleteSpace
+    jest.advanceTimersByTime(500);
+
     expect(getSpaces().some((s) => s.id === created.id)).toBe(false);
   });
 });

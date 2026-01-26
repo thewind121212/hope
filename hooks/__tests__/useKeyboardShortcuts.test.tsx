@@ -1,3 +1,11 @@
+/**
+ * @jest-environment jsdom
+ */
+import { v4 as uuidv4 } from "uuid";
+
+jest.mock("uuid", () => ({
+  v4: jest.fn(),
+}));
 import { useRef, useState } from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";

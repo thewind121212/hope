@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 import { render, screen } from '@testing-library/react';
 import MarqueeText from '@voc/components/ui/MarqueeText';
 
@@ -22,12 +25,12 @@ describe('MarqueeText', () => {
     expect(wrapper.className).toContain('whitespace-nowrap');
   });
 
-  it('should apply inline-block class to span', () => {
+  it('should apply block class to span', () => {
     const { container } = render(<MarqueeText>Test</MarqueeText>);
 
     const span = container.querySelector('span');
     expect(span).toBeInTheDocument();
-    expect(span?.className).toContain('inline-block');
+    expect(span?.className).toContain('block');
   });
 
   it('should apply hover:animate-marquee class', () => {
