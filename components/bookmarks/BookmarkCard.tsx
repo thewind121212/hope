@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Card from "@/components/ui/Card";
 import BookmarkTags from "@/components/bookmarks/BookmarkTags";
 import DropdownMenu, { DropdownMenuItem } from "@/components/ui/DropdownMenu";
@@ -85,6 +85,36 @@ export default function BookmarkCard({
 
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState(false);
+  const [showDescriptionPopover, setShowDescriptionPopover] = useState(false);
+  const [popoverPosition, setPopoverPosition] = useState<"below" | "above">("below");
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  // Click outside to close popover
+  useEffect(() => {
+    if (!showDescriptionPopover) return;
+    
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setShowDescriptionPopover(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showDescriptionPopover]);
+
+  // Calculate popover position
+  const handleTogglePopover = () => {
+    if (!showDescriptionPopover && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const popoverHeight = 200; // approximate max height
+      
+      setPopoverPosition(spaceBelow < popoverHeight ? "above" : "below");
+    }
+    setShowDescriptionPopover(!showDescriptionPopover);
+  };
 
   const hasPreview = !!bookmark.preview?.previewTitle || !!bookmark.preview?.ogImageUrl;
   const domain = getDomain(bookmark.url);
@@ -328,9 +358,63 @@ export default function BookmarkCard({
       </AnimatePresence>
 
       {bookmark.description && (
-        <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">
-          {bookmark.description}
-        </p>
+        <div className="relative" ref={popoverRef}>
+          <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-3">
+            {bookmark.description}
+          </p>
+          {bookmark.description.length > 150 && (
+            <button
+              ref={triggerRef}
+              type="button"
+              onClick={handleTogglePopover}
+              className="text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300 mt-1 font-medium"
+            >
+              {showDescriptionPopover ? "Show less" : "Show more"}
+            </button>
+          )}
+
+          <AnimatePresence>
+            {showDescriptionPopover && (
+              <motion.div
+                initial={{ opacity: 0, y: popoverPosition === "below" ? -8 : 8, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: popoverPosition === "below" ? -8 : 8, scale: 0.95 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                className={cn(
+                  "absolute left-0 right-0 z-20",
+                  popoverPosition === "below" ? "mt-2" : "bottom-full mb-2"
+                )}
+              >
+                {/* Speech bubble arrow */}
+                <div
+                  className={cn(
+                    "absolute left-4 w-4 h-4 bg-white dark:bg-slate-800 border-zinc-200 dark:border-slate-700 transform rotate-45",
+                    popoverPosition === "below"
+                      ? "-top-2 border-l border-t"
+                      : "-bottom-2 border-r border-b"
+                  )}
+                />
+                
+                {/* Popover content */}
+                <div className="relative bg-white dark:bg-slate-800 rounded-xl border border-zinc-200 dark:border-slate-700 shadow-lg p-4 max-h-48 overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => setShowDescriptionPopover(false)}
+                    className="absolute top-2 right-2 p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-slate-700 transition-colors"
+                    aria-label="Close"
+                  >
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap pr-6">
+                    {bookmark.description}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       )}
 
       <BookmarkTags tags={bookmark.tags} onTagClick={onTagClick} />
