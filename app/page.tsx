@@ -8,7 +8,6 @@ import BookmarkList from "@/components/BookmarkList";
 import { OnboardingPanel } from "@/components/onboarding/OnboardingPanel";
 import { BottomSheet } from "@/components/ui";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { BookmarksProvider } from "@/hooks/useBookmarks";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { runOnboardingMigration } from "@/lib/migration";
 import { runSpacesMigration } from "@/lib/spacesMigration";
@@ -82,8 +81,7 @@ export default function Home() {
   if (!isLoaded || sync?.isCheckingMigration) {
     return (
       <ErrorBoundary>
-        <BookmarksProvider>
-          <div className="space-y-10">
+        <div className="space-y-10">
             {/* Header skeleton */}
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -143,7 +141,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </BookmarksProvider>
       </ErrorBoundary>
     );
   }
@@ -160,41 +157,39 @@ export default function Home() {
 
   return (
     <ErrorBoundary>
-      <BookmarksProvider>
-        <div className="space-y-6">
-          {/* Onboarding Panel - shows for first-time users */}
-          <OnboardingPanel />
+      <div className="space-y-6">
+        {/* Onboarding Panel - shows for first-time users */}
+        <OnboardingPanel />
 
-          <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
-            {/* Sidebar - sticky on desktop */}
-            <div className="hidden lg:block">
-              <SpacesSidebar />
-            </div>
-
-            {/* Main content */}
-            <div className="min-w-0">
-              {/* Modals */}
-              <BookmarkFormModal
-                titleInputRef={titleInputRef}
-              />
-              <ImportExportModal />
-
-              {/* Bookmark list (toolbar + cards) */}
-              <BookmarkList
-                cardsContainerRef={cardsContainerRef}
-                onAddBookmark={openForm}
-                onOpenImportExport={openImportExport}
-                onOpenSpaces={openSpaces}
-                spacesLabel={spacesLabel}
-              />
-            </div>
+        <div className="grid gap-6 lg:grid-cols-[18rem_1fr]">
+          {/* Sidebar - sticky on desktop */}
+          <div className="hidden lg:block">
+            <SpacesSidebar />
           </div>
 
-          <BottomSheet className="max-h-[80vh] overflow-auto">
-            <SpacesSidebar className="w-full" />
-          </BottomSheet>
+          {/* Main content */}
+          <div className="min-w-0">
+            {/* Modals */}
+            <BookmarkFormModal
+              titleInputRef={titleInputRef}
+            />
+            <ImportExportModal />
+
+            {/* Bookmark list (toolbar + cards) */}
+            <BookmarkList
+              cardsContainerRef={cardsContainerRef}
+              onAddBookmark={openForm}
+              onOpenImportExport={openImportExport}
+              onOpenSpaces={openSpaces}
+              spacesLabel={spacesLabel}
+            />
+          </div>
         </div>
-      </BookmarksProvider>
+
+        <BottomSheet className="max-h-[80vh] overflow-auto">
+          <SpacesSidebar className="w-full" />
+        </BottomSheet>
+      </div>
     </ErrorBoundary>
   );
 }
