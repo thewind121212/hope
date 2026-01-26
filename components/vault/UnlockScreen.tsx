@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { Lock, Eye, EyeOff, Loader2, LogOut } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { clearAllVaultData } from '@/lib/auth-cleanup';
@@ -20,6 +21,8 @@ export function UnlockScreen() {
   const [useRecoveryCode, setUseRecoveryCode] = useState(false);
   const { unlock } = useVaultUnlock();
   const { signOut } = useClerk();
+  const router = useRouter();
+  const pathname = usePathname();
   const resetBookmarks = useResetBookmarksStateSafe();
   const resetUiState = useUiStore((state) => state.resetAllState);
 
@@ -30,6 +33,9 @@ export function UnlockScreen() {
 
     try {
       await unlock(passphrase);
+      if (pathname !== '/app') {
+        router.push('/app');
+      }
     } catch {
       setError('Incorrect passphrase. Please try again.');
       setPassphrase('');
@@ -61,7 +67,9 @@ export function UnlockScreen() {
           <RecoveryCodeUnlock
             onCancel={() => setUseRecoveryCode(false)}
             onSuccess={() => {
-              // Unlock successful - the component handles the rest
+              if (pathname !== '/app') {
+                router.push('/app');
+              }
             }}
           />
         </div>

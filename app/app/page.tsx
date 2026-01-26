@@ -82,8 +82,9 @@ export default function AppHome() {
   if (!isLoaded || sync?.isCheckingMigration) {
     return (
       <ErrorBoundary>
-        <div className="px-4 pb-16 pt-24 sm:px-6 lg:px-10">
-          <div className="space-y-10">
+        <div className="pt-24">
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
+            <div className="space-y-10">
             {/* Header skeleton */}
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -145,6 +146,7 @@ export default function AppHome() {
                 <BookmarkListSkeleton count={6} />
               </div>
             </div>
+            </div>
           </div>
         </div>
       </ErrorBoundary>
@@ -159,8 +161,10 @@ export default function AppHome() {
   // 5. Vault is not yet unlocked
   if (isSignedIn && currentUserId && syncMode === "e2e" && vaultEnvelope && !isUnlocked) {
     return (
-      <div className="px-4 pb-16 pt-24 sm:px-6 lg:px-10">
-        <UnlockScreen />
+      <div className="pt-24">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
+          <UnlockScreen />
+        </div>
       </div>
     );
   }
