@@ -78,11 +78,14 @@ export default function AppHome() {
     return match?.name ?? "Space";
   }, [selectedSpaceId, spaces]);
 
-  // Loading state - wait for auth and vault initialization, or during migration check
-  if (!isLoaded || sync?.isCheckingMigration) {
+  const isCheckingMigration = sync?.isCheckingMigration && syncMode === "plaintext";
+  const shouldShowUnlock = isSignedIn && vaultEnvelope && !isUnlocked;
+
+  // Loading state - wait for auth and plaintext migration check
+  if (!isLoaded || isCheckingMigration) {
     return (
       <ErrorBoundary>
-        <div className="pt-24">
+        <div className="pt-16 sm:pt-24">
           <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
             <div className="space-y-10">
             {/* Header skeleton */}
@@ -127,7 +130,7 @@ export default function AppHome() {
                 </div>
 
                 {/* BookmarkToolbar skeleton - search/filter bar */}
-                <div className="sticky top-0 z-10 bg-background/95 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="lg:sticky lg:top-0 z-10 bg-background/95 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="h-10 min-w-[200px] flex-1 animate-pulse rounded-lg bg-zinc-200 dark:bg-slate-700" />
                     <div className="hidden h-10 w-24 animate-pulse rounded-lg bg-zinc-200 dark:bg-slate-700 sm:block" />
@@ -153,15 +156,10 @@ export default function AppHome() {
     );
   }
 
-  // Show unlock screen ONLY if:
-  // 1. User is signed in
-  // 2. Vault is initialized for this user (currentUserId is set)
-  // 3. syncMode is 'e2e' (not plaintext or off)
-  // 4. User has an envelope (E2E is enabled)
-  // 5. Vault is not yet unlocked
-  if (isSignedIn && currentUserId && syncMode === "e2e" && vaultEnvelope && !isUnlocked) {
+  // Show unlock screen when vault is present and locked
+  if (shouldShowUnlock) {
     return (
-      <div className="pt-24">
+      <div className="pt-16 sm:pt-24">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
           <UnlockScreen />
         </div>
@@ -171,7 +169,7 @@ export default function AppHome() {
 
   return (
     <ErrorBoundary>
-      <div className="pt-24">
+      <div className="pt-16 sm:pt-24">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
           <div className="space-y-6">
           {/* Onboarding Panel - shows for first-time users */}

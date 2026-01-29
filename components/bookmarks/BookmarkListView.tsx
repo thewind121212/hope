@@ -64,8 +64,11 @@ export default function BookmarkListView({
   return (
     <div className="space-y-6">
       {/* Fixed mask to hide content scrolling through the gap between site header and sticky filter bar */}
-      <div className="fixed top-16 left-0 right-0 h-9 bg-white dark:bg-slate-950 z-10 pointer-events-none" aria-hidden="true" />
-      <div className="sticky top-25 z-20 bg-white/90 dark:bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-950/70 -mx-4 px-4 pt-4 pb-4">
+      <div
+        className="hidden lg:block fixed top-16 left-0 right-0 h-9 bg-white dark:bg-slate-950 z-10 pointer-events-none"
+        aria-hidden="true"
+      />
+      <div className="lg:sticky lg:top-25 z-20 bg-white/90 dark:bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-950/70 -mx-4 px-4 pt-4 pb-4">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>

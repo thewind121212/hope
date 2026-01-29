@@ -10,7 +10,7 @@ import {
   arrayToBase64,
   base64ToArray,
 } from '@/lib/crypto';
-import { loadAllEncryptedRecords, loadAndDecryptBookmark } from '@/lib/encrypted-storage';
+import { loadAllEncryptedRecords, loadAndDecryptBookmark, clearPulledCiphertextRecords } from '@/lib/encrypted-storage';
 import { decryptAndApplyPulledE2eRecords } from '@/lib/decrypt-and-apply';
 import type { VaultKeyEnvelope } from '@/lib/types';
 
@@ -82,12 +82,20 @@ export function useRecoveryCodeUnlock() {
       if (encryptedRecords.length > 0) {
         const testRecord = encryptedRecords[0];
         if (!testRecord.deleted) {
-          await loadAndDecryptBookmark(testRecord.recordId, vaultKey);
+          try {
+            await loadAndDecryptBookmark(testRecord.recordId, vaultKey);
+          } catch {
+            // Ignore corrupted local ciphertext; recovery unlock still valid.
+          }
         }
       }
 
       // Apply any server-pulled ciphertext
-      await decryptAndApplyPulledE2eRecords(vaultKey);
+      try {
+        await decryptAndApplyPulledE2eRecords(vaultKey);
+      } catch {
+        clearPulledCiphertextRecords();
+      }
 
       // Unlock vault
       setUnlocked(true, vaultKey);

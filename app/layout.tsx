@@ -30,7 +30,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <head>
           <ThemeScript />
         </head>
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50 text-slate-900 dark:bg-gray-950 dark:text-slate-100`}>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-gray-50 text-slate-900 dark:bg-gray-950 dark:text-slate-100`}
+          suppressHydrationWarning
+        >
           <ThemeProvider>
             <ClientProviders>
               <SiteHeader />
