@@ -5,7 +5,7 @@ import { Button, Modal } from "@/components/ui";
 import BookmarkFormFields from "@/components/BookmarkFormFields";
 import { useBookmarkForm } from "@/hooks/useBookmarkForm";
 import { useBookmarks } from "@/hooks/useBookmarks";
-import { getUniqueTags } from "@/lib/bookmarks";
+import { getTags } from "@/lib/tagsStorage";
 import { getSpaces, PERSONAL_SPACE_ID } from "@/lib/spacesStorage";
 import { useUiStore } from "@/stores/useUiStore";
 
@@ -80,7 +80,7 @@ export default function BookmarkFormModal({
     return [{ value: PERSONAL_SPACE_ID, label: "Personal" }];
   }, [spaceOptions]);
 
-  const tagSuggestions = useMemo(() => getUniqueTags(allBookmarks), [allBookmarks]);
+  const tagSuggestions = useMemo(() => getTags(), [allBookmarks]);
 
   const title = mode === "edit" ? "Edit Bookmark" : "Add Bookmark";
   const submitLabel = mode === "edit" ? "Save changes" : "Add Bookmark";

@@ -5,6 +5,8 @@ import Badge from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import type { BookmarkFormState } from "@/hooks/useBookmarkForm";
+import type { TagWithCount } from "@/lib/tagsStorage";
+import { sortByMatchQuality } from "@/lib/fuzzyMatch";
 
 function normalizeTag(raw: string): string {
   return raw.trim();
@@ -28,7 +30,7 @@ interface TagInputProps {
   value: string;
   onChangeValue: (nextValue: string) => void;
   error?: string;
-  suggestions: string[];
+  suggestions: TagWithCount[];
   containerClassName?: string;
   registerField?: (fieldName: keyof BookmarkFormState, element: HTMLInputElement | null) => void;
 }
@@ -45,6 +47,7 @@ export default function TagInput({
   registerField,
 }: TagInputProps) {
   const [draft, setDraft] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const tags = useMemo(() => parseTags(value), [value]);
@@ -55,12 +58,32 @@ export default function TagInput({
 
   const filteredSuggestions = useMemo(() => {
     const q = draft.trim().toLowerCase();
-    if (!q) return [];
-    return suggestions
-      .filter((s) => !normalizedSet.has(s.toLowerCase()))
-      .filter((s) => s.toLowerCase().includes(q))
-      .slice(0, 6);
+
+    // Exclude already-added tags
+    const available = suggestions.filter(
+      (s) => !normalizedSet.has(s.name.toLowerCase())
+    );
+
+    // Empty query: show all by count (max 8)
+    if (!q) {
+      return [...available]
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8);
+    }
+
+    // 1 char: substring match only (no fuzzy)
+    if (q.length === 1) {
+      return available
+        .filter((s) => s.name.toLowerCase().includes(q))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8);
+    }
+
+    // 2+ chars: fuzzy match + sort by quality
+    return sortByMatchQuality(available, q).slice(0, 8);
   }, [draft, suggestions, normalizedSet]);
+
+  const showDropdown = isFocused && filteredSuggestions.length > 0;
 
   const commitDraft = (raw: string) => {
     const nextTag = normalizeTag(raw);
@@ -107,6 +130,11 @@ export default function TagInput({
               inputRef.current = el;
               registerField?.(name, el);
             }}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => {
+              // Delay to allow click on suggestion
+              setTimeout(() => setIsFocused(false), 150);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -142,19 +170,22 @@ export default function TagInput({
           </button>
         </div>
 
-        {filteredSuggestions.length > 0 && (
+        {showDropdown && (
           <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
             {filteredSuggestions.map((s) => (
               <button
-                key={s}
+                key={s.name}
                 type="button"
-                className="block w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-zinc-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="flex w-full items-center justify-between px-3 py-2 text-left text-sm text-slate-700 hover:bg-zinc-100 dark:text-slate-200 dark:hover:bg-slate-800"
                 onClick={() => {
-                  commitDraft(s);
+                  commitDraft(s.name);
                   inputRef.current?.focus();
                 }}
               >
-                {s}
+                <span>{s.name}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">
+                  ({s.count})
+                </span>
               </button>
             ))}
           </div>

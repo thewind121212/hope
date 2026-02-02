@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { useBookmarkForm } from "@/hooks/useBookmarkForm";
 import { useBookmarks } from "@/hooks/useBookmarks";
-import { getUniqueTags } from "@/lib/bookmarks";
+import { getTags } from "@/lib/tagsStorage";
 import { getSpaces, PERSONAL_SPACE_ID } from "@/lib/spacesStorage";
 import type { CreateBookmarkInput } from "@/lib/validation";
 
@@ -49,7 +49,7 @@ export default function AddBookmarkForm({
     return [{ value: PERSONAL_SPACE_ID, label: "Personal" }];
   }, []);
 
-  const tagSuggestions = useMemo(() => getUniqueTags(allBookmarks), [allBookmarks]);
+  const tagSuggestions = useMemo(() => getTags(), [allBookmarks]);
 
   return (
     <Card>

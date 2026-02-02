@@ -12,6 +12,7 @@ import type {
   BookmarkFormErrors,
   BookmarkFormState,
 } from "@/hooks/useBookmarkForm";
+import type { TagWithCount } from "@/lib/tagsStorage";
 
 interface BookmarkFormFieldsProps {
   form: BookmarkFormState;
@@ -24,7 +25,7 @@ interface BookmarkFormFieldsProps {
   titleInputRef?: React.Ref<HTMLInputElement>;
   registerField?: (fieldName: keyof BookmarkFormState, element: HTMLInputElement | null) => void;
   spaceOptions: { value: string; label: string }[];
-  tagSuggestions: string[];
+  tagSuggestions: TagWithCount[];
   onGenerateDescription?: (modificationInstructions?: string) => Promise<void>;
   isGeneratingDescription?: boolean;
 }
