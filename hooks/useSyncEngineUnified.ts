@@ -274,7 +274,7 @@ export function useSyncEngine(): UseSyncEngineReturn {
                 console.log(`[e2e-sync] Pull: applied ${appliedCount} records`);
                 if (appliedCount > 0) {
                   triggerRefresh();
-                  toast.success('Up to date from cloud');
+                  // Note: toast is shown by the caller (useSyncProvider) to avoid duplicates
                 }
               } catch (error) {
                 const message = error instanceof Error ? error.message : 'Failed to decrypt pulled records';
