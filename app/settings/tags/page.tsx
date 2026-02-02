@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { useIncomingSync } from "@/hooks/useIncomingSync";
 import { useTags } from "@/hooks/useTags";
 import { TagManagement, RenameTagModal, DeleteTagModal } from "@/components/tags";
@@ -14,7 +16,7 @@ import type { TagWithCount } from "@/lib/tagsStorage";
 export default function TagSettingsPage() {
   useIncomingSync();
 
-  const { tags, refresh, isLoading } = useTags();
+  const { tags, refresh } = useTags();
   const syncMode = useSyncSettingsStore((s) => s.syncMode);
   const vaultKey = useVaultStore((s) => s.vaultKey);
 
@@ -77,12 +79,27 @@ export default function TagSettingsPage() {
 
   return (
     <>
-      <div className="pt-24">
-        <div className="mx-auto max-w-2xl p-4">
-          <h1 className="mb-6 text-2xl font-bold text-slate-900 dark:text-slate-100">Tag Management</h1>
+      <div className="pt-20 sm:pt-24">
+        <div className="mx-auto max-w-2xl px-4 py-6">
+          <div className="mb-6">
+            <Link
+              href="/app"
+              className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to bookmarks
+            </Link>
+          </div>
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              Tag Management
+            </h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Rename or delete tags across all your bookmarks.
+            </p>
+          </div>
           <TagManagement
             tags={tags}
-            isLoading={isLoading}
             onRename={handleRename}
             onDelete={handleDelete}
           />

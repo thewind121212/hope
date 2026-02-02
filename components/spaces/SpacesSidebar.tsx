@@ -1,6 +1,8 @@
 "use client";
 
 import { memo, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Hash, ChevronRight } from "lucide-react";
 import { Dashboard } from "@/components/bookmarks/Dashboard";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
@@ -9,6 +11,7 @@ import SpaceFormModal from "@/components/spaces/SpaceFormModal";
 import PinnedViewFormModal from "@/components/spaces/PinnedViewFormModal";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { useSpaces } from "@/hooks/useSpaces";
+import { useTags } from "@/hooks/useTags";
 import { cn } from "@/lib/utils";
 import { PERSONAL_SPACE_ID } from "@/lib/spacesStorage";
 import { usePinnedViews } from "@/hooks/usePinnedViews";
@@ -78,6 +81,7 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
   const { allBookmarks, moveBookmarksToSpace } = useBookmarks();
   const { addSpace, updateSpace, deleteSpace } = useSpaces();
   const { pinnedViews: allPinnedViews, addPinnedView, deletePinnedView, getPinnedViewsForSpace } = usePinnedViews();
+  const { tags } = useTags();
 
   // Filter pinned views by selected space - uses context which auto-refreshes on sync
   const pinnedViews = useMemo(() => {
@@ -199,6 +203,33 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
     >
       <div className="space-y-4">
         <Dashboard />
+
+        {/* Tags Management Link */}
+        <Link
+          href="/settings/tags"
+          className={cn(
+            "flex items-center justify-between gap-3 rounded-xl p-4",
+            "bg-white border border-slate-200 shadow-sm",
+            "dark:bg-slate-900 dark:border-slate-800",
+            "transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50 dark:bg-rose-950/40">
+              <Hash className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+            </div>
+            <div>
+              <span className="font-medium text-slate-900 dark:text-slate-100">
+                Tags
+              </span>
+              <span className="block text-xs text-slate-500 dark:text-slate-400">
+                {tags.length} tag{tags.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
+          <ChevronRight className="h-4 w-4 text-slate-400" />
+        </Link>
+
         <Card className="p-4">
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">

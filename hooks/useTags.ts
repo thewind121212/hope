@@ -1,43 +1,35 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { getTags, type TagWithCount } from "@/lib/tagsStorage";
 
 export interface UseTagsReturn {
   tags: TagWithCount[];
   refresh: () => void;
-  isLoading: boolean;
 }
 
 /**
  * Hook for reactive tag data management.
  * Provides tags with usage counts and a refresh function for manual re-fetch.
+ * Tags are loaded synchronously from localStorage on mount.
  *
  * @example
- * const { tags, refresh, isLoading } = useTags()
+ * const { tags, refresh } = useTags()
  * // After rename/delete operation:
  * refresh()
  */
 export function useTags(): UseTagsReturn {
-  const [tags, setTags] = useState<TagWithCount[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Initialize synchronously from localStorage - no loading state needed
+  const [tags, setTags] = useState<TagWithCount[]>(() => getTags());
 
   const refresh = useCallback(() => {
-    setIsLoading(true);
-    const freshTags = getTags();
-    setTags(freshTags);
-    setIsLoading(false);
+    setTags(getTags());
   }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
 
   const value = useMemo(
     () => ({
       tags,
       refresh,
-      isLoading,
     }),
-    [tags, refresh, isLoading]
+    [tags, refresh]
   );
 
   return value;
