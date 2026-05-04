@@ -1,0 +1,1297 @@
+[
+  {
+    "id": "1c53ffbc-af54-4633-8171-5a634577e363",
+    "title": "Web.dev",
+    "url": "https://web.dev",
+    "description": "Guidance and tools to help you build great experiences on the web.",
+    "tags": [
+      "frontend",
+      "performance",
+      "docs"
+    ],
+    "color": "blue",
+    "createdAt": "2026-05-03T21:13:30.000Z"
+  },
+  {
+    "id": "d9b1faad-6599-4e3e-882b-d3b8252abb6e",
+    "title": "MDN Web Docs",
+    "url": "https://developer.mozilla.org",
+    "description": "Resources for developers, by developers \u2014 the canonical reference for the web platform.",
+    "tags": [
+      "docs",
+      "reference",
+      "web"
+    ],
+    "color": "purple",
+    "createdAt": "2026-04-27T20:48:04.000Z"
+  },
+  {
+    "id": "69129ecb-088f-47f4-8568-7f983250c04c",
+    "title": "Figma",
+    "url": "https://www.figma.com",
+    "description": "Collaborative interface design \u2014 the place where teams design products.",
+    "tags": [
+      "design",
+      "tools",
+      "collaboration"
+    ],
+    "color": "purple",
+    "createdAt": "2026-04-27T10:22:49.000Z"
+  },
+  {
+    "id": "eab80e3a-e7c8-4f2a-8fe1-e3a4ad16f5f5",
+    "title": "Stack Overflow",
+    "url": "https://stackoverflow.com",
+    "description": "The largest, most trusted online community for developers to learn and share.",
+    "tags": [
+      "q-and-a",
+      "community",
+      "help"
+    ],
+    "color": "orange",
+    "createdAt": "2026-04-27T03:24:12.000Z"
+  },
+  {
+    "id": "f7490450-3d8f-4428-b18b-16439af19feb",
+    "title": "PostgreSQL",
+    "url": "https://www.postgresql.org",
+    "description": "The world's most advanced open source relational database.",
+    "tags": [
+      "database",
+      "sql",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-04-25T19:19:45.000Z"
+  },
+  {
+    "id": "804b76e2-3f8c-49f4-89e0-6e3cc1b6adbb",
+    "title": "CodeSandbox",
+    "url": "https://codesandbox.io",
+    "description": "Online IDE for rapid web development.",
+    "tags": [
+      "development",
+      "ide",
+      "tools"
+    ],
+    "color": "yellow",
+    "createdAt": "2026-04-22T22:31:01.000Z"
+  },
+  {
+    "id": "31a8bbf9-6474-4c44-b359-962928d54d30",
+    "title": "MongoDB",
+    "url": "https://www.mongodb.com",
+    "description": "The most popular NoSQL database for modern apps.",
+    "tags": [
+      "database",
+      "nosql",
+      "tools"
+    ],
+    "color": "green",
+    "createdAt": "2026-04-19T22:28:31.000Z"
+  },
+  {
+    "id": "6142c3bd-1fb8-4f50-bf68-362f4b536f9f",
+    "title": "The Verge",
+    "url": "https://www.theverge.com",
+    "description": "Tech news, reviews, and analysis.",
+    "tags": [
+      "news",
+      "tech",
+      "reading"
+    ],
+    "color": "purple",
+    "createdAt": "2026-04-19T22:02:41.000Z"
+  },
+  {
+    "id": "35ec2b41-3f8a-4de5-8baf-b16d8e6d252a",
+    "title": "Docker",
+    "url": "https://www.docker.com",
+    "description": "Develop, ship, and run applications in containers.",
+    "tags": [
+      "devops",
+      "containers",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-04-17T23:07:59.000Z"
+  },
+  {
+    "id": "7fcda0db-42f2-4b04-9c74-cab1e9861367",
+    "title": "MIT Technology Review",
+    "url": "https://www.technologyreview.com",
+    "description": "Award-winning publication covering emerging technology.",
+    "tags": [
+      "news",
+      "tech",
+      "reading"
+    ],
+    "color": "red",
+    "createdAt": "2026-04-16T11:25:10.000Z"
+  },
+  {
+    "id": "bef46571-85ce-44d0-89fe-2cd0d1009981",
+    "title": "Heroku",
+    "url": "https://www.heroku.com",
+    "description": "Platform as a service for deploying, managing, and scaling apps.",
+    "tags": [
+      "hosting",
+      "platform",
+      "tools"
+    ],
+    "color": "purple",
+    "createdAt": "2026-04-15T08:38:12.000Z"
+  },
+  {
+    "id": "3d497ae1-faa9-4437-ac5a-ca94fc4a06b5",
+    "title": "Zoom",
+    "url": "https://zoom.us",
+    "description": "Video meetings, webinars, and team collaboration.",
+    "tags": [
+      "communication",
+      "video",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-04-13T10:42:55.000Z"
+  },
+  {
+    "id": "c3c22393-7b6a-486e-9602-31cb396da1a3",
+    "title": "Wired",
+    "url": "https://www.wired.com",
+    "description": "In-depth technology, science, and culture coverage.",
+    "tags": [
+      "news",
+      "tech",
+      "reading"
+    ],
+    "color": "red",
+    "createdAt": "2026-04-12T13:07:13.000Z"
+  },
+  {
+    "id": "8ab30361-3b14-4576-8d2b-5239bfc1b5bb",
+    "title": "TypeScript Handbook",
+    "url": "https://www.typescriptlang.org/docs/",
+    "description": "The comprehensive guide to TypeScript \u2014 types, generics, and modules.",
+    "tags": [
+      "typescript",
+      "docs",
+      "javascript"
+    ],
+    "color": "blue",
+    "createdAt": "2026-04-11T09:18:55.000Z"
+  },
+  {
+    "id": "306f8d06-0686-41f7-9b13-0c4340be7cf1",
+    "title": "Papers with Code",
+    "url": "https://paperswithcode.com",
+    "description": "Free open resource for ML research papers and accompanying code.",
+    "tags": [
+      "ai",
+      "ml",
+      "research"
+    ],
+    "color": "blue",
+    "createdAt": "2026-04-11T05:05:57.000Z"
+  },
+  {
+    "id": "608e3e93-3fb7-4f6c-8918-61bb5d12fe6a",
+    "title": "Substack",
+    "url": "https://substack.com",
+    "description": "Independent newsletter publishing platform.",
+    "tags": [
+      "reading",
+      "newsletter",
+      "writing"
+    ],
+    "color": "orange",
+    "createdAt": "2026-04-10T16:58:55.000Z"
+  },
+  {
+    "id": "882d0aff-286b-4ef0-9aae-67f4b7170a8b",
+    "title": "Notion",
+    "url": "https://www.notion.so",
+    "description": "All-in-one workspace \u2014 docs, wikis, projects, and notes.",
+    "tags": [
+      "productivity",
+      "notes",
+      "tools"
+    ],
+    "color": "yellow",
+    "createdAt": "2026-04-09T17:44:40.000Z"
+  },
+  {
+    "id": "e169d1ec-4d27-435f-9693-f1421216fb4b",
+    "title": "arXiv",
+    "url": "https://arxiv.org",
+    "description": "Open-access preprint archive for math, physics, CS, and more.",
+    "tags": [
+      "research",
+      "papers",
+      "science"
+    ],
+    "color": "red",
+    "createdAt": "2026-04-06T01:14:59.000Z"
+  },
+  {
+    "id": "bdd7e375-e80d-4fcc-9616-8503a782d479",
+    "title": "Raindrop.io",
+    "url": "https://raindrop.io",
+    "description": "All-in-one bookmark manager.",
+    "tags": [
+      "bookmarking",
+      "productivity",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-04-05T17:35:56.000Z"
+  },
+  {
+    "id": "05375da2-8691-432d-aec6-cca8b9148429",
+    "title": "Discord",
+    "url": "https://discord.com",
+    "description": "Voice, video, and text chat \u2014 built for communities.",
+    "tags": [
+      "communication",
+      "community",
+      "tools"
+    ],
+    "color": "purple",
+    "createdAt": "2026-04-02T17:01:57.000Z"
+  },
+  {
+    "id": "e9a941b1-1422-42c3-9bd6-e3c747ee4a6b",
+    "title": "Quanta Magazine",
+    "url": "https://www.quantamagazine.org",
+    "description": "Covers developments in mathematics and the physical and life sciences.",
+    "tags": [
+      "news",
+      "science",
+      "reading"
+    ],
+    "color": "yellow",
+    "createdAt": "2026-04-02T02:08:24.000Z"
+  },
+  {
+    "id": "bac8da95-5387-4b0f-adc8-1673f718708f",
+    "title": "Next.js",
+    "url": "https://nextjs.org",
+    "description": "The React framework for the web \u2014 App Router, server components, edge runtime.",
+    "tags": [
+      "nextjs",
+      "react",
+      "framework"
+    ],
+    "color": "blue",
+    "createdAt": "2026-03-30T03:04:58.000Z"
+  },
+  {
+    "id": "e263ca89-3c1b-43cb-94f9-850a4029435f",
+    "title": "npm",
+    "url": "https://www.npmjs.com",
+    "description": "Package manager for the JavaScript runtime \u2014 millions of open source packages.",
+    "tags": [
+      "development",
+      "javascript",
+      "packages"
+    ],
+    "color": "red",
+    "createdAt": "2026-03-29T21:50:07.000Z"
+  },
+  {
+    "id": "39d9fbc8-088e-4f13-acc8-4d04ca9c0783",
+    "title": "Bitbucket",
+    "url": "https://bitbucket.org",
+    "description": "Git solution from Atlassian for professional teams.",
+    "tags": [
+      "development",
+      "git",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-03-28T21:10:14.000Z"
+  },
+  {
+    "id": "60b5484e-0e07-46cc-add3-44aa9d49c6ea",
+    "title": "Reddit",
+    "url": "https://www.reddit.com",
+    "description": "Forum-style communities for every interest imaginable.",
+    "tags": [
+      "social",
+      "community",
+      "discussion"
+    ],
+    "color": "orange",
+    "createdAt": "2026-03-25T22:58:31.000Z"
+  },
+  {
+    "id": "b80d98b5-31f0-4f62-98b9-69f336238285",
+    "title": "Miro",
+    "url": "https://miro.com",
+    "description": "Online collaborative whiteboard for distributed teams.",
+    "tags": [
+      "design",
+      "collaboration",
+      "tools"
+    ],
+    "color": "yellow",
+    "createdAt": "2026-03-25T17:12:03.000Z"
+  },
+  {
+    "id": "8c279330-7e85-43c9-be98-28b23fb2ea86",
+    "title": "Twitter / X",
+    "url": "https://twitter.com",
+    "description": "Real-time short-form posts and conversations.",
+    "tags": [
+      "social",
+      "news"
+    ],
+    "color": "blue",
+    "createdAt": "2026-03-24T15:25:40.000Z"
+  },
+  {
+    "id": "9483c05b-df0e-4812-9445-bea96f2fef8d",
+    "title": "A List Apart",
+    "url": "https://alistapart.com",
+    "description": "Articles for people who make websites \u2014 design, code, and content.",
+    "tags": [
+      "design",
+      "frontend",
+      "reading"
+    ],
+    "color": "blue",
+    "createdAt": "2026-03-24T14:17:42.000Z"
+  },
+  {
+    "id": "dd845645-0a81-4036-82fc-30d72ffd179d",
+    "title": "Supabase",
+    "url": "https://supabase.com",
+    "description": "Open source Firebase alternative \u2014 Postgres, auth, and realtime.",
+    "tags": [
+      "database",
+      "backend",
+      "tools"
+    ],
+    "color": "green",
+    "createdAt": "2026-03-23T13:59:03.000Z"
+  },
+  {
+    "id": "3dc83666-cd58-4345-8984-476c907c318a",
+    "title": "Loom",
+    "url": "https://www.loom.com",
+    "description": "Quick async video messaging for work.",
+    "tags": [
+      "communication",
+      "video",
+      "tools"
+    ],
+    "color": "purple",
+    "createdAt": "2026-03-23T11:10:35.000Z"
+  },
+  {
+    "id": "bf600dc7-a74f-478f-8fab-bf1bad32a15e",
+    "title": "Dribbble",
+    "url": "https://dribbble.com",
+    "description": "Discover the world's top designers and creatives.",
+    "tags": [
+      "design",
+      "inspiration",
+      "art"
+    ],
+    "color": "purple",
+    "createdAt": "2026-03-14T07:09:11.000Z"
+  },
+  {
+    "id": "bff49a20-66ba-4d62-8de9-b96c0e0b62a0",
+    "title": "Microsoft Azure",
+    "url": "https://azure.microsoft.com",
+    "description": "Cloud computing services from Microsoft.",
+    "tags": [
+      "cloud",
+      "infrastructure",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-03-11T21:05:39.000Z"
+  },
+  {
+    "id": "ce58d8a3-a987-4ea8-aa76-2f97ea849860",
+    "title": "Terraform",
+    "url": "https://www.terraform.io",
+    "description": "Infrastructure as code \u2014 provision and manage cloud resources.",
+    "tags": [
+      "devops",
+      "infrastructure",
+      "tools"
+    ],
+    "color": "purple",
+    "createdAt": "2026-03-10T06:57:03.000Z"
+  },
+  {
+    "id": "43806d9d-c01c-4847-b67d-7e1545ce135f",
+    "title": "Hacker News",
+    "url": "https://news.ycombinator.com",
+    "description": "Tech news ranked by users \u2014 startups, programming, science.",
+    "tags": [
+      "news",
+      "tech",
+      "startups"
+    ],
+    "color": "orange",
+    "createdAt": "2026-03-09T22:20:37.000Z"
+  },
+  {
+    "id": "de711e11-683e-4fce-8ec4-7c0614292922",
+    "title": "Anthropic",
+    "url": "https://www.anthropic.com",
+    "description": "Maker of Claude \u2014 AI safety company building reliable models.",
+    "tags": [
+      "ai",
+      "ml",
+      "tools"
+    ],
+    "color": "orange",
+    "createdAt": "2026-03-09T01:46:41.000Z"
+  },
+  {
+    "id": "e5e982d8-6606-461a-94cf-9f150734827c",
+    "title": "Neon",
+    "url": "https://neon.tech",
+    "description": "Serverless Postgres \u2014 branching, autoscaling, point-in-time restore.",
+    "tags": [
+      "database",
+      "postgres",
+      "tools"
+    ],
+    "color": "green",
+    "createdAt": "2026-03-08T19:00:28.000Z"
+  },
+  {
+    "id": "aea321d2-f15e-4c2a-9f48-ba9e519273e6",
+    "title": "Replit",
+    "url": "https://replit.com",
+    "description": "Collaborative browser-based IDE supporting many languages.",
+    "tags": [
+      "development",
+      "ide",
+      "education"
+    ],
+    "color": "orange",
+    "createdAt": "2026-03-06T03:08:14.000Z"
+  },
+  {
+    "id": "58e9b357-5880-420f-a44d-cb7acff72c50",
+    "title": "React Documentation",
+    "url": "https://react.dev",
+    "description": "The library for web and native user interfaces.",
+    "tags": [
+      "react",
+      "javascript",
+      "frontend"
+    ],
+    "color": "blue",
+    "createdAt": "2026-03-02T22:41:16.000Z"
+  },
+  {
+    "id": "4f8fa74f-1bb7-4a7f-8aae-8e6962464695",
+    "title": "Linear",
+    "url": "https://linear.app",
+    "description": "Issue tracking built for the way modern software teams ship.",
+    "tags": [
+      "productivity",
+      "project-management",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-02-26T05:13:57.000Z"
+  },
+  {
+    "id": "7c905972-710e-429c-b03f-6165695b299c",
+    "title": "BBC News",
+    "url": "https://www.bbc.com/news",
+    "description": "World, UK, and international news from the BBC.",
+    "tags": [
+      "news",
+      "reading"
+    ],
+    "color": "red",
+    "createdAt": "2026-02-25T11:36:09.000Z"
+  },
+  {
+    "id": "bf1adcc2-5f6f-4b25-8ab7-48b9bc7e7610",
+    "title": "Crates.io",
+    "url": "https://crates.io",
+    "description": "The Rust community's package registry.",
+    "tags": [
+      "development",
+      "rust",
+      "packages"
+    ],
+    "color": "orange",
+    "createdAt": "2026-02-25T09:31:50.000Z"
+  },
+  {
+    "id": "8cc05d9c-cc46-4f05-832e-68a9324a69e6",
+    "title": "Dev.to",
+    "url": "https://dev.to",
+    "description": "Constructive and inclusive social network for software developers.",
+    "tags": [
+      "community",
+      "blog",
+      "reading"
+    ],
+    "color": "blue",
+    "createdAt": "2026-02-24T07:28:40.000Z"
+  },
+  {
+    "id": "1d5dc99d-699e-4743-ad18-6870a8e320ab",
+    "title": "YouTube",
+    "url": "https://www.youtube.com",
+    "description": "Video sharing and streaming \u2014 tutorials, talks, music, and entertainment.",
+    "tags": [
+      "video",
+      "entertainment",
+      "learning"
+    ],
+    "color": "red",
+    "createdAt": "2026-02-22T06:34:41.000Z"
+  },
+  {
+    "id": "2c2191b3-5eb4-48c6-addd-7861e325f121",
+    "title": "StackBlitz",
+    "url": "https://stackblitz.com",
+    "description": "Online IDE that runs Node.js in the browser.",
+    "tags": [
+      "development",
+      "ide",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-02-19T03:54:34.000Z"
+  },
+  {
+    "id": "bc131b3d-eb01-493b-8121-1e3b3d86efbf",
+    "title": "Smashing Magazine",
+    "url": "https://www.smashingmagazine.com",
+    "description": "Professional resources for web designers and developers.",
+    "tags": [
+      "design",
+      "frontend",
+      "reading"
+    ],
+    "color": "orange",
+    "createdAt": "2026-02-17T14:59:07.000Z"
+  },
+  {
+    "id": "41441cb9-7354-43ee-8bbc-915fbedcfbfa",
+    "title": "Trello",
+    "url": "https://trello.com",
+    "description": "Visual collaboration \u2014 cards, lists, and boards for project management.",
+    "tags": [
+      "productivity",
+      "project-management",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-02-17T07:55:35.000Z"
+  },
+  {
+    "id": "ac2d5fac-3831-46c7-af7d-6f9565ac9cfa",
+    "title": "Are.na",
+    "url": "https://www.are.na",
+    "description": "Tool for connecting ideas and building knowledge.",
+    "tags": [
+      "bookmarking",
+      "research",
+      "community"
+    ],
+    "color": "green",
+    "createdAt": "2026-02-14T22:05:47.000Z"
+  },
+  {
+    "id": "47918903-cd45-493c-9e63-ab75799646a9",
+    "title": "Medium",
+    "url": "https://medium.com",
+    "description": "Long-form writing on tech, design, business, and culture.",
+    "tags": [
+      "reading",
+      "writing",
+      "blog"
+    ],
+    "color": "green",
+    "createdAt": "2026-02-07T03:05:36.000Z"
+  },
+  {
+    "id": "d4e7ad3e-3007-4bb7-8707-aa3f4cb619b0",
+    "title": "CSS-Tricks",
+    "url": "https://css-tricks.com",
+    "description": "Daily articles about CSS, HTML, JavaScript, and all things web design.",
+    "tags": [
+      "css",
+      "frontend",
+      "reading"
+    ],
+    "color": "purple",
+    "createdAt": "2026-02-06T02:45:11.000Z"
+  },
+  {
+    "id": "f2afa2f9-e1b9-443e-ac37-b8098748ef3d",
+    "title": "LinkedIn",
+    "url": "https://www.linkedin.com",
+    "description": "Professional networking and job search.",
+    "tags": [
+      "social",
+      "career",
+      "networking"
+    ],
+    "color": "blue",
+    "createdAt": "2026-02-05T20:41:51.000Z"
+  },
+  {
+    "id": "6460b00a-b612-456f-b487-c7f9ae067afc",
+    "title": "Obsidian",
+    "url": "https://obsidian.md",
+    "description": "A second brain for your notes \u2014 knowledge base on local plain text Markdown files.",
+    "tags": [
+      "productivity",
+      "notes",
+      "knowledge"
+    ],
+    "color": "purple",
+    "createdAt": "2026-02-04T08:50:01.000Z"
+  },
+  {
+    "id": "c4169e04-978a-4b33-a2fd-dbe5f89dd9cf",
+    "title": "AWS",
+    "url": "https://aws.amazon.com",
+    "description": "Amazon Web Services \u2014 compute, storage, databases, and more.",
+    "tags": [
+      "cloud",
+      "infrastructure",
+      "tools"
+    ],
+    "color": "orange",
+    "createdAt": "2026-01-31T00:53:33.000Z"
+  },
+  {
+    "id": "2c1e3b04-64a8-46e2-93a9-dc88954965ce",
+    "title": "Google Cloud",
+    "url": "https://cloud.google.com",
+    "description": "Cloud computing services from Google.",
+    "tags": [
+      "cloud",
+      "infrastructure",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-01-29T17:52:46.000Z"
+  },
+  {
+    "id": "8df2ed18-3a6f-438b-9dd5-b6df10482175",
+    "title": "Firebase",
+    "url": "https://firebase.google.com",
+    "description": "Backend-as-a-service from Google \u2014 auth, Firestore, hosting.",
+    "tags": [
+      "database",
+      "backend",
+      "tools"
+    ],
+    "color": "yellow",
+    "createdAt": "2026-01-26T20:59:10.000Z"
+  },
+  {
+    "id": "b131c99d-7ff2-497e-9193-a34087ed1650",
+    "title": "Glitch",
+    "url": "https://glitch.com",
+    "description": "The friendly community where everyone builds the web.",
+    "tags": [
+      "development",
+      "tools",
+      "community"
+    ],
+    "color": "purple",
+    "createdAt": "2026-01-26T20:41:38.000Z"
+  },
+  {
+    "id": "364feaa4-2a3b-4386-be06-455fbc7a97ae",
+    "title": "freeCodeCamp",
+    "url": "https://www.freecodecamp.org",
+    "description": "Free programming curriculum and certifications.",
+    "tags": [
+      "learning",
+      "programming",
+      "free"
+    ],
+    "color": "green",
+    "createdAt": "2026-01-25T16:55:13.000Z"
+  },
+  {
+    "id": "79d1d0cf-eac1-4b61-8beb-8b6234bc7276",
+    "title": "Redis",
+    "url": "https://redis.io",
+    "description": "In-memory data structure store, used as a database, cache, and broker.",
+    "tags": [
+      "database",
+      "cache",
+      "tools"
+    ],
+    "color": "red",
+    "createdAt": "2026-01-21T21:03:59.000Z"
+  },
+  {
+    "id": "0a64e13c-5465-4c65-8ebe-0224c537e0ba",
+    "title": "OpenAI",
+    "url": "https://openai.com",
+    "description": "Maker of ChatGPT and the GPT family \u2014 research and products in AI.",
+    "tags": [
+      "ai",
+      "ml",
+      "tools"
+    ],
+    "color": "green",
+    "createdAt": "2026-01-21T17:38:05.000Z"
+  },
+  {
+    "id": "2c03b976-962c-4197-a9b1-8eb7f86a65e9",
+    "title": "Awwwards",
+    "url": "https://www.awwwards.com",
+    "description": "The awards for design, creativity, and innovation on the internet.",
+    "tags": [
+      "design",
+      "inspiration",
+      "awards"
+    ],
+    "color": "purple",
+    "createdAt": "2026-01-16T22:47:19.000Z"
+  },
+  {
+    "id": "1bfaecdc-7b9c-4f34-976f-09d2577f2842",
+    "title": "Vercel",
+    "url": "https://vercel.com",
+    "description": "Frontend cloud for Next.js and friends \u2014 deploy in seconds.",
+    "tags": [
+      "hosting",
+      "deploy",
+      "tools"
+    ],
+    "color": "purple",
+    "createdAt": "2026-01-16T05:39:27.000Z"
+  },
+  {
+    "id": "8911a8c8-bab1-49b2-bbe5-3a12d34c5a86",
+    "title": "Go Packages",
+    "url": "https://pkg.go.dev",
+    "description": "Discover and search Go packages, modules, and tools.",
+    "tags": [
+      "development",
+      "go",
+      "packages"
+    ],
+    "color": "blue",
+    "createdAt": "2026-01-14T09:34:08.000Z"
+  },
+  {
+    "id": "3a7bc8a3-6509-48f2-aade-630e45284696",
+    "title": "Google",
+    "url": "https://www.google.com",
+    "description": "Search the web \u2014 the entry point for most things online.",
+    "tags": [
+      "search",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2026-01-09T09:21:36.000Z"
+  },
+  {
+    "id": "f1acd172-3d73-4372-b48b-f9ace756e2b7",
+    "title": "Cloudflare",
+    "url": "https://www.cloudflare.com",
+    "description": "CDN, DNS, DDoS protection, and serverless edge compute.",
+    "tags": [
+      "infrastructure",
+      "cdn",
+      "tools"
+    ],
+    "color": "orange",
+    "createdAt": "2026-01-07T07:40:12.000Z"
+  },
+  {
+    "id": "df9c9c90-a2a0-42c0-ae96-c2ffd663745c",
+    "title": "Slack",
+    "url": "https://slack.com",
+    "description": "Where work happens \u2014 channels, DMs, and integrations for teams.",
+    "tags": [
+      "communication",
+      "tools",
+      "collaboration"
+    ],
+    "color": "purple",
+    "createdAt": "2026-01-06T11:17:28.000Z"
+  },
+  {
+    "id": "f09b62fb-9eff-486b-86f9-25577e0f1603",
+    "title": "Pocket",
+    "url": "https://getpocket.com",
+    "description": "Save articles, videos, and stories from any publication.",
+    "tags": [
+      "reading",
+      "bookmarking",
+      "tools"
+    ],
+    "color": "red",
+    "createdAt": "2025-12-30T06:06:20.000Z"
+  },
+  {
+    "id": "7ea0f1e1-69d8-44d3-81f9-dc52c1c7a54c",
+    "title": "Ansible",
+    "url": "https://www.ansible.com",
+    "description": "Simple, agentless automation for configuration management.",
+    "tags": [
+      "devops",
+      "automation",
+      "tools"
+    ],
+    "color": "red",
+    "createdAt": "2025-12-27T16:24:36.000Z"
+  },
+  {
+    "id": "3d59db57-ec4a-4cd5-843d-2b51cf82ecdc",
+    "title": "Can I Use",
+    "url": "https://caniuse.com",
+    "description": "Up-to-date browser support tables for front-end web technologies.",
+    "tags": [
+      "frontend",
+      "reference",
+      "tools"
+    ],
+    "color": "green",
+    "createdAt": "2025-12-27T00:18:36.000Z"
+  },
+  {
+    "id": "6a0e9452-2509-4404-a576-f1e6965fa952",
+    "title": "Bundlephobia",
+    "url": "https://bundlephobia.com",
+    "description": "Find the size of any npm package and its impact on your bundle.",
+    "tags": [
+      "frontend",
+      "performance",
+      "tools"
+    ],
+    "color": "purple",
+    "createdAt": "2025-12-26T02:56:25.000Z"
+  },
+  {
+    "id": "07bd864d-39bf-4e3c-9eaa-a94d64dc468c",
+    "title": "Product Hunt",
+    "url": "https://www.producthunt.com",
+    "description": "Discover the best new products in tech every day.",
+    "tags": [
+      "news",
+      "products",
+      "startups"
+    ],
+    "color": "orange",
+    "createdAt": "2025-12-25T08:53:45.000Z"
+  },
+  {
+    "id": "9255abc7-8454-46b0-871b-0dd77caab1e6",
+    "title": "Hugging Face",
+    "url": "https://huggingface.co",
+    "description": "The AI community building the future \u2014 models, datasets, and Spaces.",
+    "tags": [
+      "ai",
+      "ml",
+      "community"
+    ],
+    "color": "yellow",
+    "createdAt": "2025-12-24T12:50:46.000Z"
+  },
+  {
+    "id": "ccf6ea93-cd5b-4534-af1c-f791517be4e4",
+    "title": "Otter.ai",
+    "url": "https://otter.ai",
+    "description": "AI meeting notes and real-time transcription.",
+    "tags": [
+      "productivity",
+      "ai",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2025-12-20T06:47:38.000Z"
+  },
+  {
+    "id": "c2948234-5700-4234-9b4b-d18666cad8d7",
+    "title": "HackerRank",
+    "url": "https://www.hackerrank.com",
+    "description": "Coding challenges and skill assessments for developers.",
+    "tags": [
+      "learning",
+      "interviews",
+      "practice"
+    ],
+    "color": "green",
+    "createdAt": "2025-12-19T21:39:39.000Z"
+  },
+  {
+    "id": "0c941a44-1291-438d-90a1-d8a8364dac8d",
+    "title": "Railway",
+    "url": "https://railway.app",
+    "description": "Deploy code from GitHub in seconds \u2014 no Dockerfile required.",
+    "tags": [
+      "hosting",
+      "deploy",
+      "tools"
+    ],
+    "color": "purple",
+    "createdAt": "2025-12-18T21:54:05.000Z"
+  },
+  {
+    "id": "446a1f60-f1ac-4228-b28d-dcfbd58715bf",
+    "title": "The Guardian",
+    "url": "https://www.theguardian.com",
+    "description": "Latest news, world news, sport, and comment.",
+    "tags": [
+      "news",
+      "reading"
+    ],
+    "color": "blue",
+    "createdAt": "2025-12-15T00:48:09.000Z"
+  },
+  {
+    "id": "70a15066-63e3-4b35-8f8a-178be82c1822",
+    "title": "Codewars",
+    "url": "https://www.codewars.com",
+    "description": "Train on coding kata to level up your skills.",
+    "tags": [
+      "learning",
+      "practice",
+      "challenges"
+    ],
+    "color": "red",
+    "createdAt": "2025-12-14T06:23:48.000Z"
+  },
+  {
+    "id": "da175ddc-f6e5-43fb-bd61-e956f8134f46",
+    "title": "PyPI",
+    "url": "https://pypi.org",
+    "description": "The Python Package Index \u2014 repository of software for Python.",
+    "tags": [
+      "development",
+      "python",
+      "packages"
+    ],
+    "color": "yellow",
+    "createdAt": "2025-12-11T11:11:28.000Z"
+  },
+  {
+    "id": "a46a9d3b-68e8-4046-842d-daebf5938948",
+    "title": "Ars Technica",
+    "url": "https://arstechnica.com",
+    "description": "Technology news and analysis for the technically literate.",
+    "tags": [
+      "news",
+      "tech",
+      "reading"
+    ],
+    "color": "orange",
+    "createdAt": "2025-12-10T03:56:50.000Z"
+  },
+  {
+    "id": "6d4dfe32-29d9-4b8a-bd3e-7855b1fdb301",
+    "title": "Kubernetes",
+    "url": "https://kubernetes.io",
+    "description": "Open source container orchestration system.",
+    "tags": [
+      "devops",
+      "containers",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2025-12-09T19:21:27.000Z"
+  },
+  {
+    "id": "1d042098-b5af-40af-8a2e-149aef8aef78",
+    "title": "Jira",
+    "url": "https://www.atlassian.com/software/jira",
+    "description": "Issue and project tracking for software teams.",
+    "tags": [
+      "productivity",
+      "project-management",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2025-12-07T23:48:49.000Z"
+  },
+  {
+    "id": "336d97be-d854-4f7d-b4e7-2ddfe96faf63",
+    "title": "Khan Academy",
+    "url": "https://www.khanacademy.org",
+    "description": "Free world-class education for anyone, anywhere.",
+    "tags": [
+      "learning",
+      "education",
+      "free"
+    ],
+    "color": "green",
+    "createdAt": "2025-12-03T04:30:06.000Z"
+  },
+  {
+    "id": "727be84c-6403-4176-a1af-e51ad416156e",
+    "title": "LeetCode",
+    "url": "https://leetcode.com",
+    "description": "Practice coding interview questions with curated problems.",
+    "tags": [
+      "learning",
+      "interviews",
+      "practice"
+    ],
+    "color": "yellow",
+    "createdAt": "2025-12-02T13:46:24.000Z"
+  },
+  {
+    "id": "9637e684-0eed-43b5-801a-c5ef74e414e3",
+    "title": "Calendly",
+    "url": "https://calendly.com",
+    "description": "Scheduling automation for teams and individuals.",
+    "tags": [
+      "productivity",
+      "scheduling",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2025-12-01T19:00:45.000Z"
+  },
+  {
+    "id": "d79c9e02-9478-4a9a-9f2f-1dad354251e4",
+    "title": "Whimsical",
+    "url": "https://whimsical.com",
+    "description": "Visual workspace for thinking \u2014 flowcharts, wireframes, mind maps.",
+    "tags": [
+      "design",
+      "tools",
+      "diagram"
+    ],
+    "color": "blue",
+    "createdAt": "2025-11-29T23:34:21.000Z"
+  },
+  {
+    "id": "a8970461-9415-430e-b566-107acb0dd1bb",
+    "title": "FT",
+    "url": "https://www.ft.com",
+    "description": "Global business, finance, and economic news.",
+    "tags": [
+      "news",
+      "business",
+      "finance"
+    ],
+    "color": "orange",
+    "createdAt": "2025-11-29T15:24:31.000Z"
+  },
+  {
+    "id": "6d72af55-ddfd-4586-a9d7-105b670583ab",
+    "title": "Asana",
+    "url": "https://asana.com",
+    "description": "Manage your team's work, projects, and tasks online.",
+    "tags": [
+      "productivity",
+      "project-management",
+      "tools"
+    ],
+    "color": "red",
+    "createdAt": "2025-11-26T17:38:52.000Z"
+  },
+  {
+    "id": "7f701470-86ef-4240-9463-a5df70b8de39",
+    "title": "Coursera",
+    "url": "https://www.coursera.org",
+    "description": "Online courses from top universities and companies.",
+    "tags": [
+      "learning",
+      "education",
+      "courses"
+    ],
+    "color": "blue",
+    "createdAt": "2025-11-25T00:59:23.000Z"
+  },
+  {
+    "id": "647aa734-d141-4783-9d93-9eee81c0e01e",
+    "title": "Lighthouse",
+    "url": "https://developers.google.com/web/tools/lighthouse",
+    "description": "Open-source automated tool for improving web page quality.",
+    "tags": [
+      "frontend",
+      "performance",
+      "tools"
+    ],
+    "color": "yellow",
+    "createdAt": "2025-11-24T19:56:55.000Z"
+  },
+  {
+    "id": "eb443f4d-7814-412c-9c26-ea679e089f5e",
+    "title": "Netlify",
+    "url": "https://www.netlify.com",
+    "description": "Build, deploy, and scale modern web projects.",
+    "tags": [
+      "hosting",
+      "deploy",
+      "tools"
+    ],
+    "color": "green",
+    "createdAt": "2025-11-23T00:35:01.000Z"
+  },
+  {
+    "id": "c42a1256-1cbd-41c8-bb17-fce56588346c",
+    "title": "GitHub",
+    "url": "https://github.com",
+    "description": "Where the world builds software. Host code, manage projects, and ship together.",
+    "tags": [
+      "development",
+      "tools",
+      "git"
+    ],
+    "color": "blue",
+    "createdAt": "2025-11-22T02:45:40.000Z"
+  },
+  {
+    "id": "17900704-f2f2-435f-857f-239ab46af7cb",
+    "title": "Excalidraw",
+    "url": "https://excalidraw.com",
+    "description": "Virtual hand-drawn whiteboard for sketching diagrams.",
+    "tags": [
+      "design",
+      "tools",
+      "diagram"
+    ],
+    "color": "purple",
+    "createdAt": "2025-11-21T12:19:52.000Z"
+  },
+  {
+    "id": "47846612-4bc7-4862-a489-ac96618714b1",
+    "title": "PlanetScale",
+    "url": "https://planetscale.com",
+    "description": "Serverless MySQL platform with branching and zero downtime migrations.",
+    "tags": [
+      "database",
+      "mysql",
+      "tools"
+    ],
+    "color": "purple",
+    "createdAt": "2025-11-21T10:32:12.000Z"
+  },
+  {
+    "id": "bc4455dd-9bff-4024-bc26-57f1994a1a8b",
+    "title": "GitLab",
+    "url": "https://gitlab.com",
+    "description": "DevOps platform \u2014 Git, CI/CD, issues, wikis.",
+    "tags": [
+      "development",
+      "git",
+      "tools"
+    ],
+    "color": "orange",
+    "createdAt": "2025-11-20T14:06:30.000Z"
+  },
+  {
+    "id": "43f8c41b-791c-4846-a21e-f642419ee6b4",
+    "title": "New York Times",
+    "url": "https://www.nytimes.com",
+    "description": "International news, politics, and feature reporting.",
+    "tags": [
+      "news",
+      "reading"
+    ],
+    "color": "blue",
+    "createdAt": "2025-11-16T13:30:36.000Z"
+  },
+  {
+    "id": "c48d9837-ebb7-44fb-ade7-d52ee99d6459",
+    "title": "TailwindCSS",
+    "url": "https://tailwindcss.com",
+    "description": "Utility-first CSS framework for rapid UI development.",
+    "tags": [
+      "css",
+      "styling",
+      "framework"
+    ],
+    "color": "green",
+    "createdAt": "2025-11-11T10:57:30.000Z"
+  },
+  {
+    "id": "5fc0608b-3f81-488c-b60a-691705f679e6",
+    "title": "Frontend Masters",
+    "url": "https://frontendmasters.com",
+    "description": "Advanced courses from leading practitioners in frontend.",
+    "tags": [
+      "learning",
+      "frontend",
+      "courses"
+    ],
+    "color": "red",
+    "createdAt": "2025-11-11T02:38:38.000Z"
+  },
+  {
+    "id": "49ed5a64-50d4-4cdd-b9fc-632ab8fc387c",
+    "title": "edX",
+    "url": "https://www.edx.org",
+    "description": "Online courses from Harvard, MIT, and more.",
+    "tags": [
+      "learning",
+      "education",
+      "courses"
+    ],
+    "color": "blue",
+    "createdAt": "2025-11-10T15:26:39.000Z"
+  },
+  {
+    "id": "100f7d4f-39f0-4bb8-8e54-ab8ef1e19032",
+    "title": "egghead.io",
+    "url": "https://egghead.io",
+    "description": "Bite-sized video lessons for web developers.",
+    "tags": [
+      "learning",
+      "video",
+      "courses"
+    ],
+    "color": "yellow",
+    "createdAt": "2025-11-10T11:15:51.000Z"
+  },
+  {
+    "id": "66d3cfed-5a4f-4c02-b4e2-de6b979e3da0",
+    "title": "Behance",
+    "url": "https://www.behance.net",
+    "description": "Showcase and discover creative work \u2014 graphic design, illustration, photography.",
+    "tags": [
+      "design",
+      "portfolio",
+      "art"
+    ],
+    "color": "purple",
+    "createdAt": "2025-11-05T10:58:26.000Z"
+  },
+  {
+    "id": "723327ab-8b1e-485b-aaca-b6ceb04b2b6c",
+    "title": "DigitalOcean",
+    "url": "https://www.digitalocean.com",
+    "description": "Cloud infrastructure for developers \u2014 droplets, managed databases, app platform.",
+    "tags": [
+      "cloud",
+      "hosting",
+      "tools"
+    ],
+    "color": "blue",
+    "createdAt": "2025-11-05T07:13:13.000Z"
+  },
+  {
+    "id": "366d5f71-65af-406b-baa7-d209e9879ec2",
+    "title": "CodePen",
+    "url": "https://codepen.io",
+    "description": "Online community for testing and showcasing HTML, CSS, and JavaScript snippets.",
+    "tags": [
+      "development",
+      "frontend",
+      "tools"
+    ],
+    "color": "green",
+    "createdAt": "2025-11-05T04:16:56.000Z"
+  }
+]

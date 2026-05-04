@@ -45,3 +45,6 @@ validator-check/
 
 # quality reports
 /quality-reports
+
+# clerk configuration (can include secrets)
+/.clerk/

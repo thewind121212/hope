@@ -2,8 +2,8 @@
 
 import { useMemo, useRef, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { HomeBackdrop } from "@/components/home/HomeBackdrop";
 import BookmarkFormModal from "@/components/bookmarks/BookmarkFormModal";
-import ImportExportModal from "@/components/bookmarks/ImportExportModal";
 import BookmarkList from "@/components/BookmarkList";
 import { OnboardingPanel } from "@/components/onboarding/OnboardingPanel";
 import { BottomSheet } from "@/components/ui";
@@ -32,12 +32,10 @@ export default function AppHome() {
   const _selectedTag = useUiStore((s) => s.selectedTag);
   const _sortKey = useUiStore((s) => s.sortKey);
   const _isFormOpen = useUiStore((s) => s.isFormOpen);
-  const _isImportExportOpen = useUiStore((s) => s.isImportExportOpen);
   const _isSpacesOpen = useUiStore((s) => s.isSpacesOpen);
 
   // Store actions
   const openForm = useUiStore((s) => s.openForm);
-  const openImportExport = useUiStore((s) => s.openImportExport);
   const openSpaces = useUiStore((s) => s.openSpaces);
   const _setSearchQuery = useUiStore((s) => s.setSearchQuery);
   const _closeForm = useUiStore((s) => s.closeForm);
@@ -85,7 +83,8 @@ export default function AppHome() {
   if (!isLoaded || isCheckingMigration) {
     return (
       <ErrorBoundary>
-        <div className="pt-16 sm:pt-24">
+        <HomeBackdrop />
+        <div className="relative pt-16 sm:pt-24">
           <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
             <div className="space-y-10">
             {/* Header skeleton */}
@@ -130,7 +129,7 @@ export default function AppHome() {
                 </div>
 
                 {/* BookmarkToolbar skeleton - search/filter bar */}
-                <div className="lg:sticky lg:top-0 z-10 bg-background/95 pb-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="pb-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="h-10 min-w-[200px] flex-1 animate-pulse rounded-lg bg-zinc-200 dark:bg-slate-700" />
                     <div className="hidden h-10 w-24 animate-pulse rounded-lg bg-zinc-200 dark:bg-slate-700 sm:block" />
@@ -159,17 +158,21 @@ export default function AppHome() {
   // Show unlock screen when vault is present and locked
   if (shouldShowUnlock) {
     return (
-      <div className="pt-16 sm:pt-24">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
-          <UnlockScreen />
+      <>
+        <HomeBackdrop />
+        <div className="relative pt-16 sm:pt-24">
+          <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
+            <UnlockScreen />
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
     <ErrorBoundary>
-      <div className="pt-16 sm:pt-24">
+      <HomeBackdrop />
+      <div className="relative pt-16 sm:pt-24">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-7xl">
           <div className="space-y-6">
           {/* Onboarding Panel - shows for first-time users */}
@@ -185,13 +188,11 @@ export default function AppHome() {
             <div className="min-w-0 scroll-mt-24" id="bookmarks">
               {/* Modals */}
               <BookmarkFormModal titleInputRef={titleInputRef} />
-              <ImportExportModal />
 
               {/* Bookmark list (toolbar + cards) */}
               <BookmarkList
                 cardsContainerRef={cardsContainerRef}
                 onAddBookmark={openForm}
-                onOpenImportExport={openImportExport}
                 onOpenSpaces={openSpaces}
                 spacesLabel={spacesLabel}
               />

@@ -2,17 +2,23 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Lock, Settings } from "lucide-react";
 import { AuthHeader } from "@/components/auth";
 import { useVaultStore } from "@/stores/vault-store";
 import { useSyncSettingsStore } from "@/stores/sync-settings-store";
 
+const HIDDEN_HEADER_ROUTES = ["/sign-in", "/sign-up", "/sso-callback"];
+
 export function SiteHeader() {
   const pathname = usePathname();
   const isSettingsPage = pathname === "/settings";
   const isAppRoute = pathname?.startsWith("/app");
+  const isAuthRoute = HIDDEN_HEADER_ROUTES.some((route) => pathname?.startsWith(route));
   const { vaultEnvelope, isUnlocked, lock } = useVaultStore();
   const { syncMode } = useSyncSettingsStore();
+
+  if (isAuthRoute) return null;
 
   const showQuickLock = syncMode === 'e2e' && vaultEnvelope && isUnlocked;
 
@@ -21,15 +27,23 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-zinc-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div className="w-full px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-rose-500" aria-hidden="true" />
-            <Link href={isAppRoute ? "/app" : "/"} className="hover:opacity-80 transition-opacity">
-              <h1 className="text-2xl font-semibold tracking-tight">Bookmark Vault</h1>
-            </Link>
-          </div>
+          <Link
+            href={isAppRoute ? "/app" : "/"}
+            className="flex items-center gap-3 transition-opacity hover:opacity-80"
+          >
+            <Image
+              src="/logo.png"
+              alt="Simple Bookmark"
+              width={36}
+              height={36}
+              priority
+              className="h-9 w-9 rounded-lg"
+            />
+            <h1 className="text-2xl font-semibold tracking-tight">Simple Bookmark</h1>
+          </Link>
           <div className="flex items-center gap-2">
             {showQuickLock && (
               <button

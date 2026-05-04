@@ -29,7 +29,7 @@ export function RecoveryCodeDisplay({
   };
 
   const downloadCodes = () => {
-    const text = `Bookmark Vault Recovery Codes\n\nGenerated: ${new Date().toLocaleString()}\n\nIMPORTANT: Save these codes in a safe location.\nEach code can be used once to regain access if you forget your passphrase.\nTreat them like passwords.\n\n${codes.map((code, i) => `${i + 1}. ${code}`).join('\n')}`;
+    const text = `Simple Bookmark Recovery Codes\n\nGenerated: ${new Date().toLocaleString()}\n\nIMPORTANT: Save these codes in a safe location.\nEach code can be used once to regain access if you forget your passphrase.\nTreat them like passwords.\n\n${codes.map((code, i) => `${i + 1}. ${code}`).join('\n')}`;
     const blob = new Blob([text], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -53,7 +53,7 @@ export function RecoveryCodeDisplay({
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Bookmark Vault Recovery Codes</title>
+        <title>Simple Bookmark Recovery Codes</title>
         <style>
           body { font-family: monospace; padding: 20px; }
           h1 { margin-bottom: 20px; }
@@ -63,7 +63,7 @@ export function RecoveryCodeDisplay({
         </style>
       </head>
       <body>
-        <h1>Bookmark Vault Recovery Codes</h1>
+        <h1>Simple Bookmark Recovery Codes</h1>
         <p class="warning">⚠️ KEEP THESE CODES SAFE! Each code can be used once to regain access to your vault.</p>
         <p>Generated: ${new Date().toLocaleString()}</p>
         ${codes.map((code, i) => `<div class="code">${i + 1}. ${code}</div>`).join('')}

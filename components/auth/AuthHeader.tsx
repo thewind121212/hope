@@ -5,14 +5,22 @@ import Link from "next/link";
 import { clearAllVaultData } from "@/lib/auth-cleanup";
 import { useUiStore } from "@/stores/useUiStore";
 import { useResetBookmarksStateSafe } from "@/hooks/useBookmarks";
+import { useLocalMode } from "@/lib/local-mode";
 
 export function AuthHeader() {
   const { isSignedIn, isLoaded, signOut } = useAuth();
+  const { localMode, hydrated } = useLocalMode();
   const resetBookmarks = useResetBookmarksStateSafe();
   const resetUiState = useUiStore((state) => state.resetAllState);
 
-  if (!isLoaded) {
+  if (!isLoaded || !hydrated) {
     return <div className="w-24 h-8 bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />;
+  }
+
+  // Local-mode users have explicitly opted out of accounts — keep the header
+  // free of auth chrome. Upgrade path lives in Settings.
+  if (!isSignedIn && localMode) {
+    return null;
   }
 
   const handleSignOut = async () => {

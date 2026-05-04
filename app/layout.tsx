@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bookmark Vault",
+  title: "Simple Bookmark",
   description: "Save, view, search, and manage your bookmarks",
 };
 

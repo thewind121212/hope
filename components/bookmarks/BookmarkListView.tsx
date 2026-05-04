@@ -18,7 +18,6 @@ interface BookmarkListViewProps {
   cardsContainerRef: React.Ref<HTMLDivElement>;
   cards: React.ReactNode;
   onAddBookmark?: () => void;
-  onOpenImportExport?: () => void;
   onOpenSpaces?: () => void;
   spacesLabel?: string;
 }
@@ -32,7 +31,6 @@ export default function BookmarkListView({
   cardsContainerRef,
   cards,
   onAddBookmark,
-  onOpenImportExport,
   onOpenSpaces,
   spacesLabel,
 }: BookmarkListViewProps) {
@@ -63,71 +61,52 @@ export default function BookmarkListView({
 
   return (
     <div className="space-y-6">
-      {/* Fixed mask to hide content scrolling through the gap between site header and sticky filter bar */}
-      <div
-        className="hidden lg:block fixed top-16 left-0 right-0 h-9 bg-white dark:bg-slate-950 z-10 pointer-events-none"
-        aria-hidden="true"
-      />
-      <div className="lg:sticky lg:top-25 z-20 bg-white/90 dark:bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-950/70 -mx-4 px-4 pt-4 pb-4">
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Your personal vault</p>
-              <h2 className="text-2xl font-semibold">Manage your bookmarks</h2>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {onAddBookmark && <Button onClick={onAddBookmark}>Add bookmark</Button>}
-              {onOpenImportExport && (
-                <Button
-                  variant="secondary"
-                  onClick={onOpenImportExport}
-                  aria-label="Import or export bookmarks"
-                >
-                  <ImportExportIcon />
-                </Button>
-              )}
-              <KeyboardShortcutsHelp position="bottom" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 lg:hidden">
-            <div className="min-w-0">
-              <p className="text-xs text-slate-500 dark:text-slate-400">Space</p>
-              <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                {spacesLabel ?? "Space"}
-              </p>
-            </div>
-            {onOpenSpaces && (
-              <Button
-                variant="secondary"
-                className="shrink-0"
-                onClick={onOpenSpaces}
-              >
-                Spaces
-              </Button>
-            )}
-          </div>
-
-          <BookmarkToolbar
-            onClearFilters={clearAllFilters}
-            tagOptions={tagOptions}
-            resultsCount={resultsCount}
-            totalCount={totalCount}
-            searchInputRef={searchInputRef}
-          />
-
-          {hasActiveFilters && (
-            <FilterChips
-              searchQuery={searchQuery}
-              selectedTag={selectedTag}
-              sortKey={sortKey}
-              onClearSearch={handleClearSearch}
-              onClearTag={() => setSelectedTag("all")}
-              onResetSort={() => setSortKey("newest")}
-            />
-          )}
-        </div>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <KeyboardShortcutsHelp position="bottom" />
+        <Button onClick={onAddBookmark} disabled={!onAddBookmark}>
+          Add bookmark
+        </Button>
       </div>
+
+      <div className="flex items-center justify-between gap-3 lg:hidden">
+        <div className="min-w-0">
+          <p className="text-xs text-slate-500 dark:text-slate-400">Space</p>
+          <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+            {spacesLabel ?? "Space"}
+          </p>
+        </div>
+        {onOpenSpaces && (
+          <Button
+            variant="secondary"
+            className="shrink-0"
+            onClick={onOpenSpaces}
+          >
+            Spaces
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <BookmarkToolbar
+          onClearFilters={clearAllFilters}
+          tagOptions={tagOptions}
+          resultsCount={resultsCount}
+          totalCount={totalCount}
+          searchInputRef={searchInputRef}
+        />
+
+        {hasActiveFilters && (
+          <FilterChips
+            searchQuery={searchQuery}
+            selectedTag={selectedTag}
+            sortKey={sortKey}
+            onClearSearch={handleClearSearch}
+            onClearTag={() => setSelectedTag("all")}
+            onResetSort={() => setSortKey("newest")}
+          />
+        )}
+      </div>
+
       {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
       {isInitialLoading ? (
         <BookmarkListSkeleton count={6} />
@@ -157,25 +136,3 @@ export default function BookmarkListView({
   );
 }
 
-function ImportExportIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="16 3 21 3 21 8" />
-      <line x1="4" y1="20" x2="21" y2="3" />
-      <polyline points="21 16 21 21 16 21" />
-      <line x1="15" y1="15" x2="21" y2="21" />
-      <line x1="4" y1="4" x2="9" y2="9" />
-    </svg>
-  );
-}

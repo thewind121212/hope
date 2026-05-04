@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
+import { isLocalMode } from "@/lib/local-mode";
 
 type HomeLandingProps = {
   variant?: "app" | "home";
@@ -35,6 +38,13 @@ const useCases = [
 ];
 
 export default function HomeLanding({ variant = "app" }: HomeLandingProps) {
+  const { isSignedIn, isLoaded } = useAuth();
+  const [localMode, setLocalModeState] = useState(false);
+
+  useEffect(() => {
+    setLocalModeState(isLocalMode());
+  }, []);
+
   const handleScroll = () => {
     document.getElementById("bookmarks")?.scrollIntoView({
       behavior: "smooth",
@@ -43,6 +53,8 @@ export default function HomeLanding({ variant = "app" }: HomeLandingProps) {
   };
 
   const isHome = variant === "home";
+  const hasAccess = isSignedIn || localMode;
+  const ctaReady = isLoaded;
 
   return (
     <section className="space-y-10">
@@ -53,7 +65,7 @@ export default function HomeLanding({ variant = "app" }: HomeLandingProps) {
         <div className="relative grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div className="space-y-6 animate-fade-up">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 shadow-sm ring-1 ring-amber-100 dark:bg-slate-900/70 dark:text-amber-200 dark:ring-slate-800">
-              Bookmark Vault
+              Simple Bookmark
             </span>
             <div className="space-y-4">
               <h1 className="text-4xl font-semibold text-slate-900 dark:text-white sm:text-5xl">
@@ -65,12 +77,26 @@ export default function HomeLanding({ variant = "app" }: HomeLandingProps) {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {isHome ? (
-                <Link
-                  href="/app"
-                  className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-                >
-                  Open your bookmarks
-                </Link>
+                !ctaReady ? (
+                  <span
+                    aria-hidden
+                    className="inline-block h-12 w-48 animate-pulse rounded-lg bg-zinc-200/70 dark:bg-slate-800"
+                  />
+                ) : hasAccess ? (
+                  <Link
+                    href="/app"
+                    className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+                  >
+                    Open your bookmarks
+                  </Link>
+                ) : (
+                  <Link
+                    href="/sign-in"
+                    className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+                  >
+                    Let&apos;s get started
+                  </Link>
+                )
               ) : (
                 <Button onClick={handleScroll} className="px-6 py-3 text-base">
                   Go to your bookmarks

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bookmark, Tag, Clock, Link } from "lucide-react";
+import { Bookmark, Clock, Link } from "lucide-react";
 import DropdownMenu from "@/components/ui/DropdownMenu";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import { useUiStore } from "@/stores/useUiStore";
@@ -26,14 +26,6 @@ export function Dashboard() {
 
   // Calculate stats
   const bookmarkCount = bookmarksInSpace.length;
-  
-  const uniqueTags = useMemo(() => {
-    const tags = new Set<string>();
-    bookmarksInSpace.forEach((b) => b.tags?.forEach((t) => tags.add(t)));
-    return tags;
-  }, [bookmarksInSpace]);
-  
-  const tagCount = uniqueTags.size;
 
   // Get 3 most recently added bookmarks
   const recentBookmarks = useMemo(() => {
@@ -53,15 +45,6 @@ export function Dashboard() {
           <div>
             <span className="font-semibold text-slate-900 dark:text-slate-100">{bookmarkCount}</span>
             <span className="text-slate-500 dark:text-slate-400 text-sm ml-1">bookmarks</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-            <Tag className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <span className="font-semibold text-slate-900 dark:text-slate-100">{tagCount}</span>
-            <span className="text-slate-500 dark:text-slate-400 text-sm ml-1">tags</span>
           </div>
         </div>
       </div>

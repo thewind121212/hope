@@ -46,7 +46,7 @@ describe('OnboardingPanel', () => {
     render(<OnboardingPanel />);
 
     await waitFor(() => {
-      expect(screen.getByText('Welcome to Bookmark Vault')).toBeInTheDocument();
+      expect(screen.getByText('Welcome to Simple Bookmark')).toBeInTheDocument();
     });
   });
 
@@ -56,7 +56,7 @@ describe('OnboardingPanel', () => {
     const { container } = render(<OnboardingPanel />);
 
     await waitFor(() => {
-      expect(screen.queryByText('Welcome to Bookmark Vault')).not.toBeInTheDocument();
+      expect(screen.queryByText('Welcome to Simple Bookmark')).not.toBeInTheDocument();
     });
     expect(container.firstChild).toBeNull();
   });
@@ -82,7 +82,7 @@ describe('OnboardingPanel', () => {
 
     expect(markOnboardingSeen).toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.queryByText('Welcome to Bookmark Vault')).not.toBeInTheDocument();
+      expect(screen.queryByText('Welcome to Simple Bookmark')).not.toBeInTheDocument();
     });
   });
 
@@ -107,7 +107,7 @@ describe('OnboardingPanel', () => {
 
     expect(markOnboardingSeen).toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.queryByText('Welcome to Bookmark Vault')).not.toBeInTheDocument();
+      expect(screen.queryByText('Welcome to Simple Bookmark')).not.toBeInTheDocument();
     });
   });
 
@@ -122,7 +122,7 @@ describe('OnboardingPanel', () => {
 
     // When signed in, onboarding should not be visible (it triggers a hard refresh)
     await waitFor(() => {
-      expect(screen.queryByText('Welcome to Bookmark Vault')).not.toBeInTheDocument();
+      expect(screen.queryByText('Welcome to Simple Bookmark')).not.toBeInTheDocument();
     });
   });
 });
