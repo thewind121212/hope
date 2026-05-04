@@ -2,8 +2,9 @@
 
 import { memo, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Hash, ChevronRight } from "lucide-react";
-import { Dashboard } from "@/components/bookmarks/Dashboard";
+import { Hash, ChevronRight, Pin } from "lucide-react";
+import Modal from "@/components/ui/Modal";
+import BookmarkControlsPanel from "@/components/bookmarks/BookmarkControlsPanel";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -77,6 +78,7 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
   const [spaceFormTarget, setSpaceFormTarget] = useState<Space | null>(null);
 
   const [isPinnedViewFormOpen, setIsPinnedViewFormOpen] = useState(false);
+  const [isPinnedViewsModalOpen, setIsPinnedViewsModalOpen] = useState(false);
 
   const { allBookmarks, moveBookmarksToSpace } = useBookmarks();
   const { addSpace, updateSpace, deleteSpace } = useSpaces();
@@ -202,13 +204,13 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
       )}
     >
       <div className="space-y-4">
-        <Dashboard />
+        <BookmarkControlsPanel />
 
-        {/* Tags Management Link */}
+        {/* Library overview — bookmark + tag totals, links to Tags management */}
         <Link
           href="/settings/tags"
           className={cn(
-            "flex items-center justify-between gap-3 rounded-xl p-4",
+            "flex items-center justify-between gap-3 rounded-xl p-3",
             "bg-white border border-slate-200 shadow-sm",
             "dark:bg-slate-900 dark:border-slate-800",
             "transition-all hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700"
@@ -219,8 +221,8 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
               <Hash className="h-4 w-4 text-rose-600 dark:text-rose-400" />
             </div>
             <div>
-              <span className="font-medium text-slate-900 dark:text-slate-100">
-                Tags
+              <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">
+                {allBookmarks.length} bookmark{allBookmarks.length !== 1 ? "s" : ""}
               </span>
               <span className="block text-xs text-slate-500 dark:text-slate-400">
                 {tags.length} tag{tags.length !== 1 ? "s" : ""}
@@ -230,26 +232,26 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
           <ChevronRight className="h-4 w-4 text-slate-400" />
         </Link>
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <Card className="p-3">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Spaces
             </h3>
             <Button
-              variant="secondary"
-              className="px-3 py-1.5"
+              variant="ghost"
+              className="px-2 py-1 text-xs"
               onClick={handleAddSpace}
             >
-              Add
+              + Add
             </Button>
           </div>
 
-          <div className="mt-3 space-y-1">
+          <div className="mt-2 space-y-0.5">
             <button
               type="button"
               onClick={() => handleSelectSpaceId("all")}
               className={cn(
-                "w-full rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                "w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors",
                 selectedSpaceId === "all"
                   ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
                   : "text-slate-700 hover:bg-zinc-100 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -271,7 +273,7 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
                 <div
                   key={space.id}
                   className={cn(
-                    "grid grid-cols-[1fr_auto_auto] items-center gap-2 rounded-lg px-3 py-2 transition-colors",
+                    "group grid grid-cols-[1fr_auto] items-center gap-1 rounded-md px-2 py-1.5 transition-colors",
                     active
                       ? "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
                       : "text-slate-700 hover:bg-zinc-100 dark:text-slate-200 dark:hover:bg-slate-800"
@@ -285,90 +287,114 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
                     <span className="block truncate">{space.name}</span>
                   </button>
 
-                  {space.id !== PERSONAL_SPACE_ID ? (
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleRenameSpace(space.id);
-                        }}
-                        className="rounded-md p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-                        aria-label={`Rename space ${space.name}`}
-                      >
-                        <svg
-                          className="h-4 w-4"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          aria-hidden="true"
+                  <div className="flex items-center gap-1">
+                    {space.id !== PERSONAL_SPACE_ID && (
+                      <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleRenameSpace(space.id);
+                          }}
+                          className="rounded p-1 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                          aria-label={`Rename space ${space.name}`}
                         >
-                          <path d="M4 13.5V16h2.5l7.373-7.373-2.5-2.5L4 13.5z" />
-                          <path d="M14.854 2.646a.5.5 0 01.707 0l1.793 1.793a.5.5 0 010 .707l-1.44 1.44-2.5-2.5 1.44-1.44z" />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          requestDeleteSpace(space.id);
-                        }}
-                        className="rounded-md p-1.5 text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                        aria-label={`Delete space ${space.name}`}
-                      >
-                        <svg
-                          className="h-4 w-4"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          aria-hidden="true"
+                          <svg
+                            className="h-3.5 w-3.5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path d="M4 13.5V16h2.5l7.373-7.373-2.5-2.5L4 13.5z" />
+                            <path d="M14.854 2.646a.5.5 0 01.707 0l1.793 1.793a.5.5 0 010 .707l-1.44 1.44-2.5-2.5 1.44-1.44z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            requestDeleteSpace(space.id);
+                          }}
+                          className="rounded p-1 text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
+                          aria-label={`Delete space ${space.name}`}
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M8.257 3.099c.366-.446.915-.699 1.493-.699h.5c.578 0 1.127.253 1.493.699L12.414 4H16a.75.75 0 010 1.5h-.636l-.621 10.06A2.25 2.25 0 0112.5 17.75h-5A2.25 2.25 0 015.257 15.56L4.636 5.5H4a.75.75 0 010-1.5h3.586l.671-.901zM6.777 5.5l.56 9.06a.75.75 0 00.748.69h5a.75.75 0 00.748-.69l.56-9.06H6.777z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <div />
-                  )}
-
-                  <span
-                    className={cn(
-                      "text-xs",
-                      active
-                        ? "text-rose-600 dark:text-rose-300"
-                        : "text-slate-500 dark:text-slate-400"
+                          <svg
+                            className="h-3.5 w-3.5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            aria-hidden="true"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M8.257 3.099c.366-.446.915-.699 1.493-.699h.5c.578 0 1.127.253 1.493.699L12.414 4H16a.75.75 0 010 1.5h-.636l-.621 10.06A2.25 2.25 0 0112.5 17.75h-5A2.25 2.25 0 015.257 15.56L4.636 5.5H4a.75.75 0 010-1.5h3.586l.671-.901zM6.777 5.5l.56 9.06a.75.75 0 00.748.69h5a.75.75 0 00.748-.69l.56-9.06H6.777z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     )}
-                  >
-                    {count}
-                  </span>
+
+                    <span
+                      className={cn(
+                        "min-w-[1.5rem] text-right text-xs",
+                        active
+                          ? "text-rose-600 dark:text-rose-300"
+                          : "text-slate-500 dark:text-slate-400"
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </div>
                 </div>
               );
             })}
           </div>
         </Card>
 
-        <Card className="p-4">
+        <button
+          type="button"
+          onClick={() => setIsPinnedViewsModalOpen(true)}
+          className="inline-flex items-center gap-2 self-start rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          aria-label="Pinned views"
+        >
+          <Pin className="h-4 w-4" />
+          <span>Pinned views</span>
+          {pinnedViews.length > 0 && (
+            <span className="ml-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-900/40 dark:text-rose-200">
+              {pinnedViews.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      <Modal
+        isOpen={isPinnedViewsModalOpen}
+        onClose={() => setIsPinnedViewsModalOpen(false)}
+        className="max-w-md"
+      >
+        <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
               Pinned views
             </h3>
             <Button
               variant="secondary"
               className="px-3 py-1.5"
-              onClick={handleSavePinnedView}
+              onClick={() => {
+                setIsPinnedViewsModalOpen(false);
+                handleSavePinnedView();
+              }}
             >
-              Save
+              Save current
             </Button>
           </div>
 
           {pinnedViews.length === 0 ? (
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Save your current filters to access them in 1 click.
             </p>
           ) : (
-            <div className="mt-3 space-y-1">
+            <div className="space-y-1">
               {pinnedViews.map((view) => (
                 <div
                   key={view.id}
@@ -378,7 +404,8 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
                     type="button"
                     onClick={() => {
                       applyPinnedView(view);
-                      closeSpaces(); // Auto-close for mobile UX
+                      setIsPinnedViewsModalOpen(false);
+                      closeSpaces();
                     }}
                     className="flex-1 px-3 py-2 text-left text-sm text-slate-700 dark:text-slate-200"
                   >
@@ -411,8 +438,8 @@ function SpacesSidebar({ className }: SpacesSidebarProps) {
               ))}
             </div>
           )}
-        </Card>
-      </div>
+        </div>
+      </Modal>
 
       <ConfirmDialog
         isOpen={Boolean(deleteTarget)}

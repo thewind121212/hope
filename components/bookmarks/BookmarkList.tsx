@@ -27,7 +27,6 @@ export default function BookmarkList({
     errorMessage,
     allBookmarksCount,
     filteredBookmarks,
-    tagOptions,
     pendingAdds,
     pendingDeletes,
     isInitialLoading,
@@ -106,7 +105,6 @@ export default function BookmarkList({
   return (
     <div className="space-y-6">
       <BookmarkListView
-        tagOptions={tagOptions}
         resultsCount={filteredBookmarks.length}
         totalCount={allBookmarksCount}
         errorMessage={errorMessage}

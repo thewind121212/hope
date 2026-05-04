@@ -1,16 +1,12 @@
 "use client";
 
-import { useRef } from "react";
-import BookmarkToolbar from "@/components/bookmarks/BookmarkToolbar";
 import FilterChips from "@/components/bookmarks/FilterChips";
-import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { Button } from "@/components/ui";
 import EmptyState from "@/components/ui/EmptyState";
 import { BookmarkListSkeleton } from "@/components/bookmarks/BookmarkCardSkeleton";
 import { useUiStore } from "@/stores/useUiStore";
 
 interface BookmarkListViewProps {
-  tagOptions: string[];
   resultsCount: number;
   totalCount: number;
   errorMessage: string | null;
@@ -23,7 +19,6 @@ interface BookmarkListViewProps {
 }
 
 export default function BookmarkListView({
-  tagOptions,
   resultsCount,
   totalCount,
   errorMessage,
@@ -45,9 +40,6 @@ export default function BookmarkListView({
   const clearSearch = useUiStore((s) => s.clearSearch);
   const clearAllFilters = useUiStore((s) => s.clearAllFilters);
 
-  // Local ref for search input
-  const searchInputRef = useRef<HTMLInputElement>(undefined);
-
   const handleClearSearch = () => {
     clearSearch();
   };
@@ -61,13 +53,6 @@ export default function BookmarkListView({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        <KeyboardShortcutsHelp position="bottom" />
-        <Button onClick={onAddBookmark} disabled={!onAddBookmark}>
-          Add bookmark
-        </Button>
-      </div>
-
       <div className="flex items-center justify-between gap-3 lg:hidden">
         <div className="min-w-0">
           <p className="text-xs text-slate-500 dark:text-slate-400">Space</p>
@@ -86,26 +71,16 @@ export default function BookmarkListView({
         )}
       </div>
 
-      <div className="space-y-3">
-        <BookmarkToolbar
-          onClearFilters={clearAllFilters}
-          tagOptions={tagOptions}
-          resultsCount={resultsCount}
-          totalCount={totalCount}
-          searchInputRef={searchInputRef}
+      {hasActiveFilters && (
+        <FilterChips
+          searchQuery={searchQuery}
+          selectedTag={selectedTag}
+          sortKey={sortKey}
+          onClearSearch={handleClearSearch}
+          onClearTag={() => setSelectedTag("all")}
+          onResetSort={() => setSortKey("newest")}
         />
-
-        {hasActiveFilters && (
-          <FilterChips
-            searchQuery={searchQuery}
-            selectedTag={selectedTag}
-            sortKey={sortKey}
-            onClearSearch={handleClearSearch}
-            onClearTag={() => setSelectedTag("all")}
-            onResetSort={() => setSortKey("newest")}
-          />
-        )}
-      </div>
+      )}
 
       {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
       {isInitialLoading ? (
