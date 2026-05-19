@@ -78,6 +78,7 @@ interface BookmarksContextValue {
   updateBookmark: (bookmark: Bookmark) => UpdateBookmarkResult;
   importBookmarks: (bookmarks: Bookmark[]) => Promise<ImportResult>;
   moveBookmarksToSpace: (fromSpaceId: string, toSpaceId: string) => { success: true } | { success: false; error: string };
+  moveBookmarksByIds: (ids: string[], toSpaceId: string) => { success: true } | { success: false; error: string };
   fetchPreview: (id: string, url: string) => Promise<FetchPreviewResult>;
   refreshPreview: (id: string, url: string) => Promise<FetchPreviewResult>;
   clearError: () => void;
@@ -631,6 +632,51 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
     [state.bookmarks, queueSync]
   );
 
+  const moveBookmarksByIds = useCallback(
+    (
+      ids: string[],
+      toSpaceId: string
+    ): { success: true } | { success: false; error: string } => {
+      if (ids.length === 0) return { success: true };
+      try {
+        const idSet = new Set(ids);
+        const updated = state.bookmarks.map((bookmark) =>
+          idSet.has(bookmark.id)
+            ? { ...bookmark, spaceId: toSpaceId }
+            : bookmark
+        );
+
+        const stored = setBookmarks(updated);
+        if (!stored) {
+          const error =
+            "Unable to update bookmarks. Please check your browser storage settings.";
+          dispatch({ type: "IMPORT_BOOKMARKS_ERROR", error });
+          toast.error(error);
+          return { success: false, error };
+        }
+
+        dispatch({ type: "IMPORT_BOOKMARKS_SUCCESS", bookmarks: updated });
+
+        updated
+          .filter((b) => idSet.has(b.id))
+          .forEach((bookmark) => {
+            queueSync(bookmark);
+          });
+
+        toast.success(
+          `Moved ${ids.length} bookmark${ids.length > 1 ? "s" : ""}`,
+        );
+        return { success: true };
+      } catch {
+        const error = "Unable to move bookmarks.";
+        dispatch({ type: "IMPORT_BOOKMARKS_ERROR", error });
+        toast.error(error);
+        return { success: false, error };
+      }
+    },
+    [state.bookmarks, queueSync]
+  );
+
   const fetchPreview = useCallback(
     async (id: string, url: string): Promise<FetchPreviewResult> => {
       const cached = getPreviewFromStorage(id);
@@ -720,6 +766,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       updateBookmark,
       importBookmarks,
       moveBookmarksToSpace,
+      moveBookmarksByIds,
       fetchPreview,
       refreshPreview,
       clearError,
@@ -735,6 +782,7 @@ export function BookmarksProvider({ children }: { children: ReactNode }) {
       updateBookmark,
       importBookmarks,
       moveBookmarksToSpace,
+      moveBookmarksByIds,
       fetchPreview,
       refreshPreview,
       clearError,
@@ -782,6 +830,7 @@ export function useBookmarks(searchTerm: string = "") {
     updateBookmark: context.updateBookmark,
     importBookmarks: context.importBookmarks,
     moveBookmarksToSpace: context.moveBookmarksToSpace,
+    moveBookmarksByIds: context.moveBookmarksByIds,
     fetchPreview: context.fetchPreview,
     refreshPreview: context.refreshPreview,
   };

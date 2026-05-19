@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Download, Upload, FileJson, AlertTriangle } from "lucide-react";
 import { Button, Modal } from "@/components/ui";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import ImportPreview from "@/components/ImportPreview";
@@ -12,9 +13,49 @@ import {
 } from "@/hooks/useImportBookmarks";
 import { getBookmarks } from "@/lib/storage";
 import { useUiStore } from "@/stores/useUiStore";
+import { cn } from "@/lib/utils";
+
+function SegmentButton({
+  active,
+  disabled,
+  children,
+  onClick,
+  title,
+}: {
+  active: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={cn(
+        "flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+        active
+          ? "bg-rose-500 text-white shadow-sm"
+          : "text-slate-600 hover:bg-zinc-100 dark:text-slate-300 dark:hover:bg-slate-800",
+        disabled && "cursor-not-allowed opacity-50 hover:bg-transparent dark:hover:bg-transparent",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Segmented({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex gap-1 rounded-lg border border-zinc-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+      {children}
+    </div>
+  );
+}
 
 export default function ImportExportModal() {
-  // Read from store
   const isOpen = useUiStore((s) => s.isImportExportOpen);
   const closeImportExport = useUiStore((s) => s.closeImportExport);
 
@@ -32,22 +73,10 @@ export default function ImportExportModal() {
 
   const hasPreview = state.imported.length > 0;
 
-  // Calculate stats
   const stats = useMemo(() => {
     const tags = new Set<string>();
-    const withColors = allBookmarks.filter((b) => b.color).length;
-    const withDescriptions = allBookmarks.filter((b) => b.description).length;
-
-    allBookmarks.forEach((bookmark) => {
-      bookmark.tags.forEach((tag) => tags.add(tag));
-    });
-
-    return {
-      total: allBookmarks.length,
-      uniqueTags: tags.size,
-      withColors,
-      withDescriptions,
-    };
+    allBookmarks.forEach((b) => b.tags.forEach((t) => tags.add(t)));
+    return { total: allBookmarks.length, tags: tags.size };
   }, [allBookmarks]);
 
   const handleExport = () => {
@@ -62,13 +91,10 @@ export default function ImportExportModal() {
     URL.revokeObjectURL(url);
   };
 
-  const triggerFileSelect = () => {
-    fileInputRef.current?.click();
-  };
+  const triggerFileSelect = () => fileInputRef.current?.click();
 
   const handleImportClick = () => {
     if (state.mode === "replace" && allBookmarks.length > 0) {
-      // Show confirmation for replace mode
       setShowReplaceConfirm(true);
     } else {
       handleImport();
@@ -82,65 +108,73 @@ export default function ImportExportModal() {
 
   const handleModeChange = (newMode: ImportMode) => {
     setMode(newMode);
-    // Reset replace confirm when mode changes
     setShowReplaceConfirm(false);
   };
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={closeImportExport} title="Manage Data">
-        <div className="space-y-6">
-          {/* Stats Section */}
-          <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-            <h4 className="text-sm font-medium text-slate-800 dark:text-slate-100 mb-3">
-              Your Bookmarks
-            </h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+      <Modal isOpen={isOpen} onClose={closeImportExport} title="Backup & restore">
+        <div className="space-y-5">
+          {/* Quick stats banner */}
+          <div className="flex items-center justify-between rounded-lg bg-rose-50 px-4 py-3 dark:bg-rose-500/10">
+            <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+              <FileJson className="h-5 w-5 text-rose-500 dark:text-rose-400" />
               <div>
-                <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.total}</span>
-                <span className="text-slate-600 dark:text-slate-400 ml-1">total</span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {stats.total}
+                </span>{" "}
+                bookmark{stats.total === 1 ? "" : "s"}{" "}
+                <span className="text-slate-500 dark:text-slate-400">
+                  · {stats.tags} tag{stats.tags === 1 ? "" : "s"}
+                </span>
               </div>
-              <div>
-                <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.uniqueTags}</span>
-                <span className="text-slate-600 dark:text-slate-400 ml-1">tags</span>
+            </div>
+          </div>
+
+          {/* Export */}
+          <section className="rounded-lg border border-zinc-200 p-4 dark:border-slate-800">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <Download className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  Export
+                </h4>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Save every bookmark to a JSON file you can restore later.
+                </p>
               </div>
-              <div>
-                <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.withColors}</span>
-                <span className="text-slate-600 dark:text-slate-400 ml-1">colored</span>
-              </div>
-              <div>
-                <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">{stats.withDescriptions}</span>
-                <span className="text-slate-600 dark:text-slate-400 ml-1">described</span>
-              </div>
+              <Button
+                variant="secondary"
+                onClick={handleExport}
+                disabled={stats.total === 0}
+                className="shrink-0"
+              >
+                Download
+              </Button>
             </div>
           </section>
 
-          {/* Export Section */}
-          <section className="space-y-2">
-            <h4 className="text-sm font-medium text-slate-800 dark:text-slate-100">
-              Export Bookmarks
-            </h4>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Download all your bookmarks as a JSON file.
-            </p>
-            <Button variant="secondary" onClick={handleExport}>
-              <DownloadIcon />
-              Export JSON
-            </Button>
-          </section>
+          {/* Import */}
+          <section className="rounded-lg border border-zinc-200 p-4 dark:border-slate-800">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <Upload className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  Import
+                </h4>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Drop in a JSON file. Merge with what you have, or wipe and replace.
+                </p>
+              </div>
+              <Button
+                variant="secondary"
+                onClick={triggerFileSelect}
+                className="shrink-0"
+              >
+                Pick file
+              </Button>
+            </div>
 
-          <hr className="border-slate-200 dark:border-slate-700" />
-
-          {/* Import Section */}
-          <section className="space-y-3">
-            <h4 className="text-sm font-medium text-slate-800 dark:text-slate-100">
-              Import Bookmarks
-            </h4>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Upload a JSON file to import bookmarks.
-            </p>
-
-            {/* Hidden native file input */}
             <input
               ref={fileInputRef}
               type="file"
@@ -150,115 +184,99 @@ export default function ImportExportModal() {
               aria-label="Select JSON file to import"
             />
 
-            <Button variant="secondary" onClick={triggerFileSelect}>
-              <UploadIcon />
-              Choose File
-            </Button>
-
             {hasPreview && (
-              <div className="space-y-3">
+              <div className="mt-4 space-y-4 border-t border-zinc-100 pt-4 dark:border-slate-800">
                 <ImportPreview
                   bookmarks={state.preview}
                   totalCount={state.totalCount}
                   invalidCount={state.invalidCount}
                 />
 
-                {/* Import options */}
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <fieldset className="space-y-2">
-                    <legend className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
                       Mode
-                    </legend>
-                    <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                      <input
-                        type="radio"
-                        name="import-mode"
-                        value="merge"
-                        checked={state.mode === "merge"}
-                        onChange={() => handleModeChange("merge" as ImportMode)}
-                        className="accent-rose-600"
-                      />
-                      Merge
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                      <input
-                        type="radio"
-                        name="import-mode"
-                        value="replace"
-                        checked={state.mode === "replace"}
-                        onChange={() => handleModeChange("replace" as ImportMode)}
-                        className="accent-rose-600"
-                      />
-                      Replace
-                    </label>
-                  </fieldset>
+                    </p>
+                    <Segmented>
+                      <SegmentButton
+                        active={state.mode === "merge"}
+                        onClick={() => handleModeChange("merge" as ImportMode)}
+                      >
+                        Merge
+                      </SegmentButton>
+                      <SegmentButton
+                        active={state.mode === "replace"}
+                        onClick={() => handleModeChange("replace" as ImportMode)}
+                      >
+                        Replace
+                      </SegmentButton>
+                    </Segmented>
+                  </div>
 
-                  <fieldset className="space-y-2">
-                    <legend className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
                       Duplicates
-                    </legend>
-                    <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                      <input
-                        type="radio"
-                        name="duplicate-strategy"
-                        value="skip"
-                        checked={state.duplicateStrategy === "skip"}
-                        onChange={() =>
+                    </p>
+                    <Segmented>
+                      <SegmentButton
+                        active={state.duplicateStrategy === "skip"}
+                        disabled={state.mode === "replace"}
+                        onClick={() =>
                           setDuplicateStrategy("skip" as DuplicateStrategy)
                         }
+                        title="Skip URLs you already have"
+                      >
+                        Skip
+                      </SegmentButton>
+                      <SegmentButton
+                        active={state.duplicateStrategy === "keep"}
                         disabled={state.mode === "replace"}
-                        className="accent-rose-600"
-                      />
-                      Skip
-                    </label>
-                    <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                      <input
-                        type="radio"
-                        name="duplicate-strategy"
-                        value="keep"
-                        checked={state.duplicateStrategy === "keep"}
-                        onChange={() =>
+                        onClick={() =>
                           setDuplicateStrategy("keep" as DuplicateStrategy)
                         }
-                        disabled={state.mode === "replace"}
-                        className="accent-rose-600"
-                      />
-                      Keep
-                    </label>
-                  </fieldset>
+                        title="Keep both copies"
+                      >
+                        Keep both
+                      </SegmentButton>
+                    </Segmented>
+                  </div>
                 </div>
+
+                {state.mode === "replace" && allBookmarks.length > 0 && (
+                  <div className="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Replace deletes all {allBookmarks.length} current bookmark
+                      {allBookmarks.length === 1 ? "" : "s"}.
+                    </span>
+                  </div>
+                )}
 
                 <Button
                   onClick={handleImportClick}
                   disabled={state.isImporting}
                   className="w-full sm:w-auto"
                 >
-                  {state.isImporting ? "Importing..." : "Import Bookmarks"}
+                  {state.isImporting
+                    ? "Importing…"
+                    : `Import ${state.totalCount} bookmark${state.totalCount === 1 ? "" : "s"}`}
                 </Button>
-
-                {/* Warning for replace mode */}
-                {state.mode === "replace" && allBookmarks.length > 0 && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                    Warning: Replace mode will delete all existing bookmarks.
-                  </p>
-                )}
               </div>
             )}
 
             {state.message && (
-              <p className="text-sm text-green-600 dark:text-green-400">
+              <p className="mt-3 text-xs text-emerald-600 dark:text-emerald-400">
                 {state.message}
               </p>
             )}
             {state.error && (
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="mt-3 text-xs text-red-600 dark:text-red-400">
                 {state.error}
               </p>
             )}
           </section>
 
-          {/* Footer */}
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-1">
             <Button variant="ghost" onClick={closeImportExport}>
               Close
             </Button>
@@ -266,60 +284,16 @@ export default function ImportExportModal() {
         </div>
       </Modal>
 
-      {/* Replace Confirmation Dialog */}
       <ConfirmDialog
         isOpen={showReplaceConfirm}
         onClose={() => setShowReplaceConfirm(false)}
         onConfirm={handleConfirmReplace}
-        title="Replace All Bookmarks?"
-        description={`This will permanently delete your ${allBookmarks.length} existing bookmark${allBookmarks.length !== 1 ? 's' : ''} and replace them with ${state.totalCount} new bookmark${state.totalCount !== 1 ? 's' : ''}. This action cannot be undone.`}
-        confirmLabel="Yes, Replace All"
+        title="Replace all bookmarks?"
+        description={`Deletes your ${allBookmarks.length} bookmark${allBookmarks.length === 1 ? "" : "s"} and replaces with ${state.totalCount} new one${state.totalCount === 1 ? "" : "s"}. Cannot be undone.`}
+        confirmLabel="Replace all"
         cancelLabel="Cancel"
         variant="danger"
       />
     </>
-  );
-}
-
-/* Simple SVG icons */
-function DownloadIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="7 10 12 15 17 10" />
-      <line x1="12" y1="15" x2="12" y2="3" />
-    </svg>
-  );
-}
-
-function UploadIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="17 8 12 3 7 8" />
-      <line x1="12" y1="3" x2="12" y2="15" />
-    </svg>
   );
 }

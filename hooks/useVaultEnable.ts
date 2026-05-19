@@ -12,9 +12,9 @@ import {
   type MigrationProgress,
   type StoredEncryptedRecord,
 } from '@/lib/encrypted-storage';
-import { getBookmarks } from '@/lib/storage';
-import { getSpaces } from '@/lib/spacesStorage';
-import { getPinnedViews } from '@/lib/pinnedViewsStorage';
+import { getBookmarks, setBookmarks } from '@/lib/storage';
+import { getSpaces, setSpaces } from '@/lib/spacesStorage';
+import { getPinnedViews, savePinnedViews } from '@/lib/pinnedViewsStorage';
 import { syncPush } from '@/lib/sync-engine';
 import { addToOutbox } from '@/lib/sync-outbox';
 import type { RecordType } from '@/lib/types';
@@ -293,8 +293,15 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
          }
        }
 
-       // Phase 7: Cleanup client plaintext storage
+       // Phase 7: Cleanup client plaintext storage, then restore an in-memory
+       // decrypted working copy. Encrypted store remains the canonical at-rest
+       // form; plaintext copy is a decrypted cache the rest of the UI reads
+       // via getBookmarks()/getSpaces()/getPinnedViews(). Without this, the UI
+       // would show empty after enabling because plaintext keys were wiped.
        clearPlaintextStorage();
+       setBookmarks(bookmarks);
+       setSpaces(spaces);
+       savePinnedViews(pinnedViews);
 
 
       // Done!

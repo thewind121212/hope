@@ -57,6 +57,10 @@ export function clearAllVaultData(): void {
       ) {
         keysToDelete.push(key);
       }
+      // Sync settings cache (server is source of truth on next login)
+      else if (key === 'sync-settings-storage') {
+        keysToDelete.push(key);
+      }
     }
 
     // Step 3: Delete all collected localStorage keys

@@ -10,8 +10,20 @@ import {
   arrayToBase64,
   base64ToArray,
 } from '@/lib/crypto';
-import { loadAllEncryptedRecords, loadAndDecryptBookmark, clearPulledCiphertextRecords } from '@/lib/encrypted-storage';
+import {
+  loadAllEncryptedRecords,
+  loadAndDecryptBookmark,
+  loadAndDecryptAllBookmarks,
+  loadAndDecryptAllSpaces,
+  loadAndDecryptAllPinnedViews,
+  mergePulledCiphertextRecords,
+  clearPulledCiphertextRecords,
+} from '@/lib/encrypted-storage';
 import { decryptAndApplyPulledE2eRecords } from '@/lib/decrypt-and-apply';
+import { syncPull } from '@/lib/sync-engine';
+import { setBookmarks, invalidateAllCaches } from '@/lib/storage';
+import { setSpaces } from '@/lib/spacesStorage';
+import { savePinnedViews } from '@/lib/pinnedViewsStorage';
 import type { VaultKeyEnvelope } from '@/lib/types';
 
 export function useRecoveryCodeUnlock() {
@@ -90,11 +102,36 @@ export function useRecoveryCodeUnlock() {
         }
       }
 
+      // Pull latest encrypted records from server.
+      try {
+        const pulled = await syncPull();
+        if (pulled.success && pulled.records.length > 0) {
+          mergePulledCiphertextRecords(pulled.records);
+        }
+      } catch (err) {
+        console.warn('[vault-recovery] server pull failed', err);
+      }
+
       // Apply any server-pulled ciphertext
       try {
         await decryptAndApplyPulledE2eRecords(vaultKey);
       } catch {
         clearPulledCiphertextRecords();
+      }
+
+      // Rehydrate plaintext working copy from encrypted local store.
+      try {
+        const [bookmarks, spaces, pinnedViews] = await Promise.all([
+          loadAndDecryptAllBookmarks(vaultKey),
+          loadAndDecryptAllSpaces(vaultKey),
+          loadAndDecryptAllPinnedViews(vaultKey),
+        ]);
+        setBookmarks(bookmarks);
+        setSpaces(spaces);
+        savePinnedViews(pinnedViews);
+        invalidateAllCaches();
+      } catch (err) {
+        console.warn('[vault-recovery] hydrate plaintext failed', err);
       }
 
       // Unlock vault

@@ -27,10 +27,10 @@ function XIcon({ className }: { className?: string }) {
 
 interface FilterChipsProps {
   searchQuery: string;
-  selectedTag: string;
+  selectedTags: string[];
   sortKey: SortKey;
   onClearSearch: () => void;
-  onClearTag: () => void;
+  onRemoveTag: (tag: string) => void;
   onResetSort: () => void;
 }
 
@@ -40,10 +40,10 @@ interface FilterChipsProps {
  */
 export default function FilterChips({
   searchQuery,
-  selectedTag,
+  selectedTags,
   sortKey,
   onClearSearch,
-  onClearTag,
+  onRemoveTag,
   onResetSort,
 }: FilterChipsProps) {
   const chips: Array<{ key: string; label: string; onRemove: () => void }> = [];
@@ -57,12 +57,12 @@ export default function FilterChips({
     });
   }
 
-  // Tag chip
-  if (selectedTag && selectedTag !== "all") {
+  // Tag chips (one per selected tag)
+  for (const tag of selectedTags) {
     chips.push({
-      key: "tag",
-      label: `Tag: ${selectedTag}`,
-      onRemove: onClearTag,
+      key: `tag:${tag}`,
+      label: `Tag: ${tag}`,
+      onRemove: () => onRemoveTag(tag),
     });
   }
 

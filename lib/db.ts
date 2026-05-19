@@ -1,20 +1,29 @@
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { Pool } from 'pg';
 
 if (typeof process !== 'undefined' && !process.env.DATABASE_URL) {
-  import('dotenv').then(({ config }) => config());
+  import('dotenv').then(({ config }) => config({ path: '.env.local' }));
 }
 
-neonConfig.fetchConnectionCache = true;
+let pool: Pool | null = null;
 
-let pool: ReturnType<typeof neon> | null = null;
-
-export function getPool() {
+export function getPool(): Pool {
   if (!pool) {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
       throw new Error('DATABASE_URL is not defined');
     }
-    pool = neon(databaseUrl);
+    pool = new Pool({
+      connectionString: databaseUrl,
+      ssl:
+        process.env.DATABASE_SSL === 'false'
+          ? false
+          : databaseUrl.includes('sslmode=disable')
+            ? false
+            : { rejectUnauthorized: false },
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+    });
   }
   return pool;
 }
@@ -24,9 +33,8 @@ export async function query<T = unknown>(
   params: Array<unknown> = []
 ): Promise<T[]> {
   try {
-    const pool = getPool();
-    const result = await pool.query(sql, params);
-    return result as T[];
+    const result = await getPool().query(sql, params);
+    return result.rows as T[];
   } catch (error) {
     console.error('Database query error:', error);
     throw error;

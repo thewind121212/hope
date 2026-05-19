@@ -8,6 +8,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useBookmarkListState } from "@/components/bookmarks/useBookmarkListState";
 import { useBookmarkSelection } from "@/hooks/useBookmarkSelection";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useSpaces } from "@/hooks/useSpaces";
 import { useUiStore } from "@/stores/useUiStore";
 
 interface BookmarkListProps {
@@ -55,7 +56,8 @@ export default function BookmarkList({
     [filteredBookmarks]
   );
 
-  const { bulkDelete } = useBookmarks();
+  const { bulkDelete, moveBookmarksByIds } = useBookmarks();
+  const { spaces } = useSpaces();
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const handleBulkDelete = async () => {
@@ -64,6 +66,14 @@ export default function BookmarkList({
     if (result.success) {
       clearSelection();
       setShowBulkDeleteConfirm(false);
+    }
+  };
+
+  const handleMoveToSpace = (spaceId: string) => {
+    const ids = Array.from(selectedIds);
+    const result = moveBookmarksByIds(ids, spaceId);
+    if (result.success) {
+      clearSelection();
     }
   };
 
@@ -121,6 +131,8 @@ export default function BookmarkList({
         onSelectAll={() => selectAll(visibleIds)}
         onClearSelection={clearSelection}
         onDeleteSelected={() => setShowBulkDeleteConfirm(true)}
+        spaces={spaces}
+        onMoveToSpace={handleMoveToSpace}
       />
       <BookmarkListDialogs
         editTarget={editTarget}

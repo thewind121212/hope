@@ -7,10 +7,10 @@ import FilterChips from '@voc/components/bookmarks/FilterChips';
 describe('FilterChips', () => {
   const mockProps = {
     searchQuery: '',
-    selectedTag: 'all',
+    selectedTags: [] as string[],
     sortKey: 'newest' as const,
     onClearSearch: jest.fn(),
-    onClearTag: jest.fn(),
+    onRemoveTag: jest.fn(),
     onResetSort: jest.fn(),
   };
 
@@ -27,8 +27,8 @@ describe('FilterChips', () => {
     expect(screen.getByText(/Search: "test query"/)).toBeInTheDocument();
   });
 
-  it('should render tag chip when selectedTag is not "all"', () => {
-    const props = { ...mockProps, selectedTag: 'design' };
+  it('should render tag chip when selectedTags is non-empty', () => {
+    const props = { ...mockProps, selectedTags: ['design'] };
     render(<FilterChips {...props} />);
 
     expect(screen.getByText(/Tag: design/)).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('FilterChips', () => {
     const props = {
       ...mockProps,
       searchQuery: 'test',
-      selectedTag: 'design',
+      selectedTags: ['design'],
       sortKey: 'title' as const,
     };
     render(<FilterChips {...props} />);
@@ -66,14 +66,14 @@ describe('FilterChips', () => {
     }
   });
 
-  it('should call onClearTag when tag chip remove button is clicked', () => {
-    const props = { ...mockProps, selectedTag: 'design', onClearTag: jest.fn() };
+  it('should call onRemoveTag when tag chip remove button is clicked', () => {
+    const props = { ...mockProps, selectedTags: ['design'], onRemoveTag: jest.fn() };
     const { container } = render(<FilterChips {...props} />);
 
     const chip = container.querySelector('button');
     if (chip) {
       fireEvent.click(chip);
-      expect(props.onClearTag).toHaveBeenCalledTimes(1);
+      expect(props.onRemoveTag).toHaveBeenCalledWith('design');
     }
   });
 

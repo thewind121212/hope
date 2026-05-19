@@ -15,7 +15,7 @@ export function useBookmarkListState() {
   // Read from store
   const selectedSpaceId = useUiStore((s) => s.selectedSpaceId);
   const searchQuery = useUiStore((s) => s.searchQuery);
-  const selectedTag = useUiStore((s) => s.selectedTag);
+  const selectedTags = useUiStore((s) => s.selectedTags);
   const sortKey = useUiStore((s) => s.sortKey);
 
   const {
@@ -53,18 +53,13 @@ export function useBookmarkListState() {
   );
 
   const filteredBookmarks = useMemo(() => {
-    // Single-pass filter: apply all conditions at once
     const filtered = bookmarksInScope.filter((bookmark) => {
-      // Check tag filter
-      if (selectedTag && selectedTag !== "all" && !bookmark.tags.includes(selectedTag)) {
-        return false;
-      }
-      return true;
+      if (selectedTags.length === 0) return true;
+      return selectedTags.every((t) => bookmark.tags.includes(t));
     });
 
-    // Sort once after filtering
     return sortBookmarks(filtered, sortKey);
-  }, [bookmarksInScope, selectedTag, sortKey]);
+  }, [bookmarksInScope, selectedTags, sortKey]);
 
   const handleDeleteRequest = useCallback((bookmark: Bookmark) => {
     setDeleteTarget(bookmark);

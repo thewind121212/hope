@@ -119,8 +119,10 @@ function BookmarkCardComponent({
   const hasPreview = !!bookmark.preview?.previewTitle || !!bookmark.preview?.ogImageUrl;
   const domain = getDomain(bookmark.url);
 
+  const attemptedKeyRef = useRef<string | null>(null);
+
   const loadPreview = useCallback(async () => {
-    if (!fetchPreview || hasPreview || previewLoading) return;
+    if (!fetchPreview) return;
     setPreviewLoading(true);
     setPreviewError(false);
     const result = await fetchPreview(bookmark.id, bookmark.url);
@@ -128,16 +130,15 @@ function BookmarkCardComponent({
       setPreviewError(true);
     }
     setPreviewLoading(false);
-  }, [fetchPreview, hasPreview, previewLoading, bookmark.id, bookmark.url]);
+  }, [fetchPreview, bookmark.id, bookmark.url]);
 
   useEffect(() => {
-    if (!hasPreview && fetchPreview) {
-      const timer = setTimeout(() => {
-        loadPreview();
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [hasPreview, fetchPreview, loadPreview]);
+    if (hasPreview || !fetchPreview) return;
+    const key = `${bookmark.id}|${bookmark.url}`;
+    if (attemptedKeyRef.current === key) return;
+    attemptedKeyRef.current = key;
+    loadPreview();
+  }, [hasPreview, fetchPreview, bookmark.id, bookmark.url, loadPreview]);
 
   const handleRefreshPreview = async () => {
     if (!refreshPreview) return;

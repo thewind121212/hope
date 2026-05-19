@@ -31,11 +31,11 @@ export default function BookmarkListView({
 }: BookmarkListViewProps) {
   // Read from store
   const searchQuery = useUiStore((s) => s.searchQuery);
-  const selectedTag = useUiStore((s) => s.selectedTag);
+  const selectedTags = useUiStore((s) => s.selectedTags);
   const sortKey = useUiStore((s) => s.sortKey);
 
   // Store actions
-  const setSelectedTag = useUiStore((s) => s.setSelectedTag);
+  const toggleSelectedTag = useUiStore((s) => s.toggleSelectedTag);
   const setSortKey = useUiStore((s) => s.setSortKey);
   const clearSearch = useUiStore((s) => s.clearSearch);
   const clearAllFilters = useUiStore((s) => s.clearAllFilters);
@@ -48,7 +48,7 @@ export default function BookmarkListView({
   const isFilteredEmpty = !isInitialLoading && !isEmpty && resultsCount === 0;
 
   const hasActiveFilters = Boolean(
-    searchQuery || selectedTag !== "all" || sortKey !== "newest"
+    searchQuery || selectedTags.length > 0 || sortKey !== "newest"
   );
 
   return (
@@ -74,10 +74,10 @@ export default function BookmarkListView({
       {hasActiveFilters && (
         <FilterChips
           searchQuery={searchQuery}
-          selectedTag={selectedTag}
+          selectedTags={selectedTags}
           sortKey={sortKey}
           onClearSearch={handleClearSearch}
-          onClearTag={() => setSelectedTag("all")}
+          onRemoveTag={(tag) => toggleSelectedTag(tag)}
           onResetSort={() => setSortKey("newest")}
         />
       )}

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Lock, Settings } from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
 import { AuthHeader } from "@/components/auth";
 import { useVaultStore } from "@/stores/vault-store";
 import { useSyncSettingsStore } from "@/stores/sync-settings-store";
@@ -17,6 +18,7 @@ export function SiteHeader() {
   const isAuthRoute = HIDDEN_HEADER_ROUTES.some((route) => pathname?.startsWith(route));
   const { vaultEnvelope, isUnlocked, lock } = useVaultStore();
   const { syncMode } = useSyncSettingsStore();
+  const { isSignedIn } = useAuth();
 
   if (isAuthRoute) return null;
 
@@ -56,9 +58,9 @@ export function SiteHeader() {
                 <Lock className="w-5 h-5" />
               </button>
             )}
-            {!isSettingsPage && (
-              <Link 
-                href="/settings" 
+            {!isSettingsPage && !isSignedIn && (
+              <Link
+                href="/settings"
                 className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors"
                 title="Settings"
                 aria-label="Settings"

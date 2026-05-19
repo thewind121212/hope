@@ -4,6 +4,7 @@ import { useMemo, useRef, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { HomeBackdrop } from "@/components/home/HomeBackdrop";
 import BookmarkFormModal from "@/components/bookmarks/BookmarkFormModal";
+import ImportExportModal from "@/components/bookmarks/ImportExportModal";
 import BookmarkList from "@/components/BookmarkList";
 import { OnboardingPanel } from "@/components/onboarding/OnboardingPanel";
 import { BottomSheet } from "@/components/ui";
@@ -188,6 +189,7 @@ export default function AppHome() {
             <div className="min-w-0 scroll-mt-24" id="bookmarks">
               {/* Modals */}
               <BookmarkFormModal titleInputRef={titleInputRef} />
+              <ImportExportModal />
 
               {/* Bookmark list (toolbar + cards) */}
               <BookmarkList

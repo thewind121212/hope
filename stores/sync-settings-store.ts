@@ -8,6 +8,7 @@ interface SyncSettingsState extends SyncSettings {
   // State
   isLoading: boolean;
   error: string | null;
+  serverLoaded: boolean;
 
   // Actions
   setSyncEnabled: (enabled: boolean) => void;
@@ -40,6 +41,7 @@ export const useSyncSettingsStore = create<SyncSettingsState>()(
       ...defaultSettings,
       isLoading: false,
       error: null,
+      serverLoaded: false,
 
       // Simple setters
       setSyncEnabled: (enabled) => set({ syncEnabled: enabled }),
@@ -86,15 +88,19 @@ export const useSyncSettingsStore = create<SyncSettingsState>()(
         }
       },
 
-      // Load settings from server
+      // Load settings from server (server is the source of truth)
       loadFromServer: async () => {
         set({ isLoading: true, error: null });
         try {
           const res = await fetch('/api/sync/settings');
           if (!res.ok) {
             if (res.status === 401) {
-              // Not signed in - keep defaults
-              set({ isLoading: false });
+              // Not signed in - force off and mark server NOT loaded
+              set({
+                ...defaultSettings,
+                isLoading: false,
+                serverLoaded: false,
+              });
               return;
             }
             throw new Error('Failed to load sync settings');
@@ -106,11 +112,15 @@ export const useSyncSettingsStore = create<SyncSettingsState>()(
             lastSyncAt: data.lastSyncAt,
             geminiApiKeyIsSet: data.geminiApiKeyIsSet,
             isLoading: false,
+            serverLoaded: true,
           });
         } catch (err) {
+          // On error: do NOT trust stale local values. Force off until next load.
           set({
+            ...defaultSettings,
             isLoading: false,
-            error: err instanceof Error ? err.message : 'Unknown error'
+            serverLoaded: false,
+            error: err instanceof Error ? err.message : 'Unknown error',
           });
         }
       },
@@ -142,13 +152,19 @@ export const useSyncSettingsStore = create<SyncSettingsState>()(
       },
 
       // Reset to defaults
-      reset: () => set({ ...defaultSettings, isLoading: false, error: null }),
+      reset: () =>
+        set({
+          ...defaultSettings,
+          isLoading: false,
+          error: null,
+          serverLoaded: false,
+        }),
     }),
     {
       name: 'sync-settings-storage',
+      // Server is source of truth for sync mode/enabled. Only persist
+      // non-authoritative UI hints (last sync timestamp, key-presence flag).
       partialize: (state) => ({
-        syncEnabled: state.syncEnabled,
-        syncMode: state.syncMode,
         lastSyncAt: state.lastSyncAt,
         geminiApiKeyIsSet: state.geminiApiKeyIsSet,
       }),
