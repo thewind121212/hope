@@ -128,10 +128,33 @@ export function SyncModeToggle() {
       return;
     }
 
-    // Otherwise, just update the mode
-    setSyncMode(mode);
+    // Otherwise, just update the mode.
+    // Server is the source of truth: persist first, then flip local state.
+    // If the server write fails we throw so the UI surfaces it and local
+    // state stays in the previous mode.
     if (isSignedIn) {
-      await saveToServer();
+      // Optimistically set so saveToServer reads the intended mode.
+      setSyncMode(mode);
+      try {
+        await saveToServer();
+      } catch (err) {
+        // Revert local mode if server rejected the change.
+        setSyncMode(syncMode);
+        throw err;
+      }
+    } else {
+      setSyncMode(mode);
+    }
+
+    // When sync is being turned off, drop the plaintext outbox so stale ops
+    // cannot replay if the user re-enables later. (e2e -> off transitions go
+    // through DisableVaultDialog and are handled in useVaultDisable.)
+    if (
+      mode === 'off' &&
+      syncMode === 'plaintext' &&
+      typeof window !== 'undefined'
+    ) {
+      localStorage.removeItem('plaintext-sync-outbox');
     }
   }, [syncMode, isSignedIn, setSyncMode, saveToServer]);
 
@@ -159,10 +182,12 @@ export function SyncModeToggle() {
         throw new Error(data.error || 'Failed to clear encrypted cloud data');
       }
 
-      // Clear any old local encrypted outbox before generating new ciphertext.
-      // (The enable flow will enqueue fresh ops.)
+      // Clear stale outboxes before generating new ciphertext. Both plaintext
+      // and encrypted outboxes are dropped so ops queued under the previous
+      // mode cannot replay after the mode flips.
       if (typeof window !== 'undefined') {
         localStorage.removeItem('vault-sync-outbox');
+        localStorage.removeItem('plaintext-sync-outbox');
       }
 
       setShowEnableModal(true);
@@ -377,6 +402,7 @@ export function SyncModeToggle() {
           setPendingMode(null);
         }}
         onComplete={handleDisableConfirm}
+        targetMode={pendingMode === 'off' ? 'off' : 'plaintext'}
       />
     </div>
   );

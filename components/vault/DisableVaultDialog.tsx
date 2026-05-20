@@ -23,9 +23,11 @@ interface DisableVaultDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onComplete: () => void;
+  /** Sync mode to switch to after the vault is disabled. Defaults to 'plaintext'. */
+  targetMode?: 'plaintext' | 'off';
 }
 
-export function DisableVaultDialog({ isOpen, onClose, onComplete }: DisableVaultDialogProps) {
+export function DisableVaultDialog({ isOpen, onClose, onComplete, targetMode = 'plaintext' }: DisableVaultDialogProps) {
   const [passphrase, setPassphrase] = useState('');
   const [passphraseError, setPassphraseError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -59,7 +61,7 @@ export function DisableVaultDialog({ isOpen, onClose, onComplete }: DisableVault
     }
 
     try {
-      await disableVault(passphrase);
+      await disableVault(passphrase, targetMode);
       onComplete();
       onClose();
     } catch (err) {

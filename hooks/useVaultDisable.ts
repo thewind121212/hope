@@ -192,7 +192,10 @@ export function useVaultDisable() {
   );
 
   const disableVault = useCallback(
-    async (passphrase: string): Promise<void> => {
+    async (
+      passphrase: string,
+      targetMode: 'plaintext' | 'off' = 'plaintext',
+    ): Promise<void> => {
       setIsDisabling(true);
       setProgress({ phase: 'verifying', step: 'Verifying passphrase...' });
 
@@ -515,9 +518,16 @@ export function useVaultDisable() {
         lock();
         clearEnvelope();
 
-        // Update sync settings to plaintext mode
-        setSyncMode('plaintext');
+        // Update sync settings to the caller-requested target mode.
+        // 'plaintext' keeps server sync going; 'off' fully disables sync.
+        setSyncMode(targetMode);
         await saveToServer();
+
+        // If switching off, drop any leftover vault-sync-outbox so stale
+        // encrypted ops cannot replay on a future mode change.
+        if (targetMode === 'off' && typeof window !== 'undefined') {
+          localStorage.removeItem('vault-sync-outbox');
+        }
 
         // STEP 6: Delete backup checkpoint (cleanup)
         if (backupId) {

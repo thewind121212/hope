@@ -185,24 +185,25 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
       setEnvelope(envelope);
       setUnlocked(true, vaultKey);
 
-      // Set sync mode to e2e and save to server immediately.
-      // This prevents the race condition where loadFromServer() in SyncModeToggle
-      // could overwrite the mode with the old 'plaintext' value before the modal closes.
+      // Persist syncMode='e2e' on the server BEFORE pushing any ciphertext.
+      // If this fails we abort: pushing E2E ops while server still thinks the
+      // mode is 'plaintext' leaves an inconsistent server view that next pull
+      // would misinterpret.
       const { setSyncMode, saveToServer } = useSyncSettingsStore.getState();
       setSyncMode('e2e');
       try {
         await saveToServer();
       } catch (err) {
-        console.warn('[vault-enable] Failed to save sync settings to server:', err);
-        // Continue anyway - local state is correct, will sync on next opportunity
+        throw new Error(
+          `Failed to persist sync mode on server: ${err instanceof Error ? err.message : 'unknown error'}`,
+        );
       }
 
-      // NOTE: Sync mode is set to 'e2e' above. The settings UI no longer needs to
-      // finalize the mode switch on modal close.
-
       // Phase 4: Delete any existing encrypted records on server.
-      // CRITICAL: Old records were encrypted with a different vault key and cannot
-      // be decrypted with the new key. We must delete them before pushing new ones.
+      // CRITICAL: Old records were encrypted with a different vault key and
+      // cannot be decrypted with the new key. We MUST verify the server
+      // accepted the delete before pushing fresh ciphertext, otherwise
+      // residual rows from a previous vault collide with the new ones.
       setProgress({ phase: 'syncing', syncProgress: 0 });
 
       const deleteEncryptedRes = await fetch('/api/vault/disable', {
@@ -212,7 +213,12 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
       });
 
       if (!deleteEncryptedRes.ok) {
-        console.warn('Failed to delete existing encrypted records from server');
+        const data = await deleteEncryptedRes.json().catch(() => ({}));
+        throw new Error(
+          data.error
+            ? `Failed to clear existing encrypted records: ${data.error}`
+            : 'Failed to clear existing encrypted records from server',
+        );
       }
 
       // NOTE: Previously we cleared `vault-sync-outbox` here to drop ops
