@@ -141,6 +141,11 @@ interface VaultState {
   // Envelope for current user (loaded from localStorage)
   vaultEnvelope: VaultKeyEnvelope | null;
 
+  // True while a vault enable/disable flow is mid-execution. Used by
+  // canSync() to suppress background pulls/pushes that would race against
+  // the transition and clobber data.
+  transitionInProgress: boolean;
+
   // Initialize store with user ID (call on sign-in / app load)
   initialize: (userId: string | null) => void;
 
@@ -161,6 +166,9 @@ interface VaultState {
 
   // Clear all session state (call on sign-out)
   clearSession: () => void;
+
+  // Mark the start/end of a vault mode transition
+  setTransitionInProgress: (inProgress: boolean) => void;
 }
 
 export const useVaultStore = create<VaultState>()((set, get) => {
@@ -175,6 +183,7 @@ export const useVaultStore = create<VaultState>()((set, get) => {
     isUnlocked: initialSession.isUnlocked,
     vaultKey: initialSession.vaultKey ? new Uint8Array(initialSession.vaultKey) : null,
     vaultEnvelope: null,
+    transitionInProgress: false,
 
     initialize: (userId: string | null) => {
       if (!userId) {
@@ -264,13 +273,18 @@ export const useVaultStore = create<VaultState>()((set, get) => {
     clearSession: () => {
       // Called on sign-out - clear session state but keep envelope in localStorage
       clearSessionState();
-      
+
       set({
         currentUserId: null,
         vaultEnvelope: null,
         isUnlocked: false,
         vaultKey: null,
+        transitionInProgress: false,
       });
+    },
+
+    setTransitionInProgress: (inProgress: boolean) => {
+      set({ transitionInProgress: inProgress });
     },
   };
 });

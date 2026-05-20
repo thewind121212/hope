@@ -100,42 +100,57 @@ export async function decryptAndApplyPulledE2eRecords(vaultKey: Uint8Array): Pro
     const decrypted = await decryptPulledRecord(record, vaultKey);
 
     if (decrypted.recordType === 'bookmark') {
+      const local = bookmarksById.get(decrypted.recordId);
+      const localVersion = local?._syncVersion ?? 0;
       if (decrypted.deleted) {
-        bookmarksById.delete(decrypted.recordId);
-      } else {
+        if (localVersion <= decrypted.version) {
+          bookmarksById.delete(decrypted.recordId);
+          applied++;
+        }
+      } else if (localVersion <= decrypted.version) {
         bookmarksById.set(decrypted.recordId, {
           ...(decrypted.data as Bookmark),
           _syncVersion: decrypted.version,
           updatedAt: decrypted.updatedAt,
         });
+        applied++;
       }
-      applied++;
     }
 
     if (decrypted.recordType === 'space') {
+      const local = spacesById.get(decrypted.recordId);
+      const localVersion = local?._syncVersion ?? 0;
       if (decrypted.deleted) {
-        spacesById.delete(decrypted.recordId);
-      } else {
+        if (localVersion <= decrypted.version) {
+          spacesById.delete(decrypted.recordId);
+          applied++;
+        }
+      } else if (localVersion <= decrypted.version) {
         spacesById.set(decrypted.recordId, {
           ...(decrypted.data as Space),
           _syncVersion: decrypted.version,
           updatedAt: decrypted.updatedAt,
         });
+        applied++;
       }
-      applied++;
     }
 
     if (decrypted.recordType === 'pinned-view') {
+      const local = pinnedViewsById.get(decrypted.recordId);
+      const localVersion = local?._syncVersion ?? 0;
       if (decrypted.deleted) {
-        pinnedViewsById.delete(decrypted.recordId);
-      } else {
+        if (localVersion <= decrypted.version) {
+          pinnedViewsById.delete(decrypted.recordId);
+          applied++;
+        }
+      } else if (localVersion <= decrypted.version) {
         pinnedViewsById.set(decrypted.recordId, {
           ...(decrypted.data as PinnedView),
           _syncVersion: decrypted.version,
           updatedAt: decrypted.updatedAt,
         });
+        applied++;
       }
-      applied++;
     }
   }
 

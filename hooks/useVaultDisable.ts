@@ -199,6 +199,10 @@ export function useVaultDisable() {
       setIsDisabling(true);
       setProgress({ phase: 'verifying', step: 'Verifying passphrase...' });
 
+      // Suppress background sync during the disable flow so it cannot
+      // race with phase 2 deletions or mode swap.
+      useVaultStore.getState().setTransitionInProgress(true);
+
       let backupId: string | null = null;
 
       try {
@@ -459,46 +463,45 @@ export function useVaultDisable() {
 
         // ===== PHASE 2: COMMIT (Irreversible - Data safe on server) =====
 
-        // STEP 1: Delete encrypted records from server (atomic transaction)
+        // STEP 1: Delete encrypted records from server. Retry on transient
+        // failures so a single 5xx doesn't leave the server in a hybrid
+        // (encrypted + plaintext) state.
         setProgress({ phase: 'cleanup', step: 'Deleting encrypted records...' });
 
-        const deleteEncryptedRes = await fetch('/api/vault/disable', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete-encrypted' }),
-        });
-
-        if (!deleteEncryptedRes.ok) {
-          const error = await deleteEncryptedRes.json();
-          console.error(
-            '[Vault Disable] Failed to delete encrypted records:',
-            error
-          );
-          // Phase 2 failure: data is safe on server as plaintext, but encryption still visible
-          // User can retry or manual recovery
+        const retryDelete = async (
+          action: 'delete-encrypted' | 'delete-vault',
+        ): Promise<void> => {
+          const maxAttempts = 3;
+          let lastError: unknown = null;
+          for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+              const res = await fetch('/api/vault/disable', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action }),
+              });
+              if (res.ok) return;
+              const body = await res.json().catch(() => ({}));
+              lastError = body.error || res.statusText;
+              if (res.status < 500) break; // 4xx will not get better on retry
+            } catch (err) {
+              lastError = err;
+            }
+            if (attempt < maxAttempts) {
+              await new Promise((r) => setTimeout(r, 500 * attempt));
+            }
+          }
           throw new Error(
-            `Failed to delete encrypted records: ${error.error || 'Server error'}. Plaintext data is safe on server.`
+            `Failed to ${action} after ${maxAttempts} attempts: ${lastError instanceof Error ? lastError.message : String(lastError)}. ` +
+              `Plaintext data is safe on the server; retry disable to finish cleanup.`,
           );
-        }
+        };
+
+        await retryDelete('delete-encrypted');
 
         // STEP 2: Delete vault envelope from server
         setProgress({ phase: 'cleanup', step: 'Deleting vault envelope...' });
-
-        const deleteVaultRes = await fetch('/api/vault/disable', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete-vault' }),
-        });
-
-        if (!deleteVaultRes.ok) {
-          const error = await deleteVaultRes.json();
-          console.error('[Vault Disable] Failed to delete vault:', error);
-          // Phase 2 partial failure: encryption deleted but vault envelope still exists
-          // User can retry
-          throw new Error(
-            `Failed to delete vault: ${error.error || 'Server error'}. Some cleanup may be incomplete.`
-          );
-        }
+        await retryDelete('delete-vault');
 
         // STEP 3: Clear local encrypted storage
         rollbackMigration();
@@ -551,6 +554,7 @@ export function useVaultDisable() {
         setProgress({ phase: 'error', error: errorMessage, backupId });
         throw error;
       } finally {
+        useVaultStore.getState().setTransitionInProgress(false);
         setIsDisabling(false);
       }
     },

@@ -121,7 +121,7 @@ export function useSyncEngine(): UseSyncEngineReturn {
   const [blockedEncryptedCount, setBlockedEncryptedCount] = useState(0);
 
   const { syncMode, syncEnabled, serverLoaded, setLastSyncAt } = useSyncSettingsStore();
-  const { isUnlocked, vaultEnvelope, vaultKey } = useVaultStore();
+  const { isUnlocked, vaultEnvelope, vaultKey, transitionInProgress } = useVaultStore();
   const { triggerRefresh } = useDataRefreshStore();
 
   const syncInProgressRef = useRef(false);
@@ -129,12 +129,15 @@ export function useSyncEngine(): UseSyncEngineReturn {
   const canSync = useCallback(() => {
     // Server is source of truth. Sync is blocked until settings load from DB.
     if (!serverLoaded) return false;
+    // Hold all background sync while a vault enable/disable is running so
+    // it can't race against the transition and clobber data mid-flight.
+    if (transitionInProgress) return false;
     if (!syncEnabled || syncMode === 'off') return false;
     if (syncMode === 'e2e') {
       return isUnlocked && vaultEnvelope !== null && vaultKey !== null;
     }
     return true;
-  }, [serverLoaded, syncMode, syncEnabled, isUnlocked, vaultEnvelope, vaultKey]);
+  }, [serverLoaded, transitionInProgress, syncMode, syncEnabled, isUnlocked, vaultEnvelope, vaultKey]);
 
   const deleteEncryptedCloudData = useCallback(async (): Promise<void> => {
     const res = await fetch('/api/vault/disable', {

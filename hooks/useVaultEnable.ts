@@ -40,6 +40,18 @@ export interface PreparedVault {
   recoveryCodes: string[];
 }
 
+/**
+ * Merge two ID-keyed arrays so the second list wins per-id. Used to fold
+ * cross-tab edits made during the enable window back into the post-enable
+ * plaintext snapshot.
+ */
+function mergeById<T extends { id: string }>(snapshot: T[], latest: T[]): T[] {
+  const byId = new Map<string, T>();
+  for (const item of snapshot) byId.set(item.id, item);
+  for (const item of latest) byId.set(item.id, item);
+  return Array.from(byId.values());
+}
+
 export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boolean }) {
   const [isEnabling, setIsEnabling] = useState(false);
   const [progress, setProgress] = useState<VaultEnableProgress | null>(null);
@@ -119,6 +131,14 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
 
     let encryptedRecords: StoredEncryptedRecord[] = [];
 
+    // Capture the previous sync mode so the catch block can revert it
+    // cleanly if the enable flow fails midway.
+    const previousSyncMode = useSyncSettingsStore.getState().syncMode;
+
+    // Suppress background sync engines while the transition runs so they
+    // can't race the enable flow and clobber in-flight data.
+    useVaultStore.getState().setTransitionInProgress(true);
+
     try {
       // CRITICAL: Clear any stale data from previous vault attempts.
       // This includes:
@@ -134,11 +154,25 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
 
       // Phase 2: Encrypt all local data
       setProgress({ phase: 'encrypting' });
-      
+
       // Read bookmarks directly from storage
       const bookmarks = getBookmarks();
       const spaces = getSpaces();
       const pinnedViews = getPinnedViews();
+
+      // W1: refuse to encrypt-empty when the server is known to hold data.
+      // If we have nothing locally but the server says it has been synced
+      // before, the user probably opened a fresh device and the pull
+      // hasn't landed yet. Encrypting empty here would push empty over
+      // their real bookmarks.
+      const allEmpty =
+        bookmarks.length === 0 && spaces.length === 0 && pinnedViews.length === 0;
+      const hasServerHistory = !!useSyncSettingsStore.getState().lastSyncAt;
+      if (allEmpty && hasServerHistory) {
+        throw new Error(
+          'Refusing to enable vault: no local bookmarks but server has prior data. Wait for sync to finish, then try again.',
+        );
+      }
 
       console.log('[vault-enable] Data to encrypt:', {
         bookmarks: bookmarks.length,
@@ -197,6 +231,12 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
         throw new Error(
           `Failed to persist sync mode on server: ${err instanceof Error ? err.message : 'unknown error'}`,
         );
+      }
+
+      // W4: if the user signed out (currentUserId cleared) while we were
+      // talking to the server, bail before doing any more destructive work.
+      if (!useVaultStore.getState().currentUserId) {
+        throw new Error('User signed out during vault enable. Aborting.');
       }
 
       // Phase 4: Delete any existing encrypted records on server.
@@ -300,27 +340,48 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
          }
        }
 
-       // Phase 7: Cleanup client plaintext storage, then restore an in-memory
-       // decrypted working copy. Encrypted store remains the canonical at-rest
-       // form; plaintext copy is a decrypted cache the rest of the UI reads
-       // via getBookmarks()/getSpaces()/getPinnedViews(). Without this, the UI
-       // would show empty after enabling because plaintext keys were wiped.
+       // Phase 7: Cleanup client plaintext storage, then restore a decrypted
+       // working copy. Re-read plaintext from disk before overwriting so any
+       // edits made in another tab during the encrypt+push window are merged
+       // in instead of being clobbered by the in-memory snapshot.
+       const latestBookmarks = getBookmarks();
+       const latestSpaces = getSpaces();
+       const latestPinnedViews = getPinnedViews();
+       const mergedBookmarks = mergeById(bookmarks, latestBookmarks);
+       const mergedSpaces = mergeById(spaces, latestSpaces);
+       const mergedPinnedViews = mergeById(pinnedViews, latestPinnedViews);
+
        clearPlaintextStorage();
-       setBookmarks(bookmarks);
-       setSpaces(spaces);
-       savePinnedViews(pinnedViews);
+       setBookmarks(mergedBookmarks);
+       setSpaces(mergedSpaces);
+       savePinnedViews(mergedPinnedViews);
 
 
       // Done!
       setProgress({ phase: 'complete' });
     } catch (error) {
-      // Rollback on error
+      // Rollback on error: clear encrypted local store AND revert the local
+      // sync mode + envelope so the app does not land in a half-flipped
+      // state where syncMode='e2e' but there is no usable vault.
       rollbackMigration();
-      
+      try {
+        useSyncSettingsStore.getState().setSyncMode(previousSyncMode);
+        await useSyncSettingsStore.getState().saveToServer();
+      } catch (revertErr) {
+        console.warn('[vault-enable] mode revert failed', revertErr);
+      }
+      try {
+        clearEnvelope();
+        useVaultStore.getState().lock();
+      } catch (envErr) {
+        console.warn('[vault-enable] envelope clear failed', envErr);
+      }
+
       const errorMessage = error instanceof Error ? error.message : 'Failed to enable vault';
       setProgress({ phase: 'error', error: errorMessage });
       // Don't re-throw - the progress state will show the error to the user
     } finally {
+      useVaultStore.getState().setTransitionInProgress(false);
       setIsEnabling(false);
     }
   }, [setEnvelope, setUnlocked, clearEnvelope, deletePlaintextCloudAfterEnable]);
