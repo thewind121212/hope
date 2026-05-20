@@ -80,12 +80,12 @@ export async function GET(req: Request) {
 
     const serverCount = records.length;
 
-    // Verification gate: only count matters
-    // If record count matches, all data was uploaded successfully
+    // Verification gate: total count AND checksum must match. Count alone is
+    // not enough — a client could upload only bookmarks (missing spaces) and
+    // still hit the same total. Checksum is content-aware.
+    const expectedChecksum = url.searchParams.get('expectedChecksum') || '';
     const countMatch = serverCount === expectedCount;
-    const verified = countMatch;
 
-    // Still calculate checksum for logging/debugging, but don't gate on it
     const plaintextRecords = records.map((r) => ({
       recordId: r.record_id,
       recordType: r.record_type,
@@ -96,13 +96,22 @@ export async function GET(req: Request) {
     }));
 
     const serverChecksum = calculateChecksum(plaintextRecords);
+    // If client did not provide a checksum (older clients), fall back to
+    // count-only verification. New clients should always supply one.
+    const checksumMatch = expectedChecksum
+      ? serverChecksum === expectedChecksum
+      : true;
+    const verified = countMatch && checksumMatch;
 
     if (!verified) {
       console.error('Vault disable verification failed:', {
         userId,
         countMatch,
+        checksumMatch,
         serverCount,
         expectedCount,
+        serverChecksum,
+        expectedChecksum,
       });
     }
 
@@ -110,9 +119,9 @@ export async function GET(req: Request) {
       verified,
       serverCount,
       expectedCount,
-      checksumMatch: true, // Not required for gate anymore
+      checksumMatch,
       serverChecksum,
-      expectedChecksum: url.searchParams.get('expectedChecksum') || '',
+      expectedChecksum,
     } as VerificationResponse);
   } catch (error) {
     console.error('Vault disable verification error:', error);

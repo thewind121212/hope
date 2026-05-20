@@ -73,34 +73,42 @@ export async function syncPush(): Promise<SyncResult> {
     return { success: true, pushed: 0, conflicts: [] };
   }
 
-  // De-dupe by record key (last write wins) to avoid submitting
-  // multiple baseVersion=0 ops for the same record in one push.
+  // De-dupe by record key (last write wins) using a strict ordering tuple
+  // (createdAt, id) so same-millisecond timestamps don't collide.
   const latestByKey = new Map<string, SyncOperation>();
   for (const op of outbox) {
     const key = `${op.recordType}:${op.recordId}`;
     const existing = latestByKey.get(key);
-    if (!existing || op.createdAt >= existing.createdAt) {
+    if (
+      !existing ||
+      op.createdAt > existing.createdAt ||
+      (op.createdAt === existing.createdAt && op.id > existing.id)
+    ) {
       latestByKey.set(key, op);
     }
   }
-  const dedupedOutbox = Array.from(latestByKey.values()).sort((a, b) => a.createdAt - b.createdAt);
+  const dedupedOutbox = Array.from(latestByKey.values()).sort((a, b) =>
+    a.createdAt === b.createdAt ? a.id.localeCompare(b.id) : a.createdAt - b.createdAt,
+  );
 
   let allPushed = 0;
   const allConflicts: { recordId: string; currentVersion: number }[] = [];
+  const allResults: { recordId: string; version: number; updatedAt: string }[] = [];
 
   for (let i = 0; i < dedupedOutbox.length; i += MAX_BATCH_SIZE) {
     const batch = dedupedOutbox.slice(i, i + MAX_BATCH_SIZE);
     const result = await pushOperations(batch);
     allPushed += result.pushed;
     allConflicts.push(...result.conflicts);
+    if (result.results) allResults.push(...result.results);
 
     if (!result.success) {
-      return { success: false, pushed: allPushed, conflicts: allConflicts };
+      return { success: false, pushed: allPushed, conflicts: allConflicts, results: allResults };
     }
   }
 
   clearOutbox();
-  return { success: true, pushed: allPushed, conflicts: allConflicts };
+  return { success: true, pushed: allPushed, conflicts: allConflicts, results: allResults };
 }
 
 export async function syncPull(

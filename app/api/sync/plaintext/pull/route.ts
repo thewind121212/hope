@@ -38,14 +38,35 @@ export async function GET(req: NextRequest) {
       paramIndex++;
     }
 
-    // Cursor-based pagination
+    // Cursor-based pagination. Cursor is composite (updated_at, record_id)
+    // so records sharing the same timestamp are not skipped between pages.
+    let cursorTs: string | null = null;
+    let cursorRecordId: string | null = null;
     if (cursor) {
-      queryText += ` AND updated_at > $${paramIndex}`;
-      params.push(cursor);
-      paramIndex++;
+      const sep = cursor.indexOf('|');
+      if (sep >= 0) {
+        cursorTs = cursor.slice(0, sep);
+        cursorRecordId = cursor.slice(sep + 1);
+      } else {
+        // Legacy callers that only pass a timestamp continue to work.
+        cursorTs = cursor;
+      }
     }
 
-    queryText += ` ORDER BY updated_at ASC LIMIT $${paramIndex}`;
+    if (cursorTs !== null) {
+      if (cursorRecordId !== null) {
+        queryText += ` AND (updated_at, record_id) > ($${paramIndex}, $${paramIndex + 1})`;
+        params.push(cursorTs);
+        params.push(cursorRecordId);
+        paramIndex += 2;
+      } else {
+        queryText += ` AND updated_at > $${paramIndex}`;
+        params.push(cursorTs);
+        paramIndex++;
+      }
+    }
+
+    queryText += ` ORDER BY updated_at ASC, record_id ASC LIMIT $${paramIndex}`;
     params.push(limit);
 
     type PlaintextRecordRow = {
@@ -60,7 +81,7 @@ export async function GET(req: NextRequest) {
     const records = await query<PlaintextRecordRow>(queryText, params);
 
     const nextCursor = records.length > 0
-      ? records[records.length - 1].updated_at
+      ? `${records[records.length - 1].updated_at}|${records[records.length - 1].record_id}`
       : null;
 
     const hasMore = records.length === limit;

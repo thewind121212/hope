@@ -12,6 +12,7 @@ export interface SyncOperation {
 }
 
 const OUTBOX_KEY = 'vault-sync-outbox';
+const OUTBOX_QUARANTINE_KEY = 'vault-sync-outbox-quarantine';
 
 function normalizeOutboxItem(op: unknown): SyncOperation | null {
   if (!op || typeof op !== 'object') return null;
@@ -54,9 +55,30 @@ export function getOutbox(): SyncOperation[] {
     const parsed = JSON.parse(data);
     if (!Array.isArray(parsed)) return [];
 
-    const normalized = parsed.map(normalizeOutboxItem).filter(Boolean) as SyncOperation[];
+    const normalized: SyncOperation[] = [];
+    const quarantined: unknown[] = [];
+    for (const item of parsed) {
+      const norm = normalizeOutboxItem(item);
+      if (norm) normalized.push(norm);
+      else quarantined.push(item);
+    }
 
-    if (normalized.length !== parsed.length) {
+    if (quarantined.length > 0) {
+      // Preserve malformed ops in a quarantine bucket instead of silently
+      // dropping. Surface count via console so dev can recover them.
+      try {
+        const existing = localStorage.getItem(OUTBOX_QUARANTINE_KEY);
+        const prev = existing ? JSON.parse(existing) : [];
+        const combined = Array.isArray(prev)
+          ? [...prev, ...quarantined]
+          : quarantined;
+        localStorage.setItem(OUTBOX_QUARANTINE_KEY, JSON.stringify(combined));
+      } catch {
+        // Best-effort; do not block.
+      }
+      console.warn(
+        `[sync-outbox] quarantined ${quarantined.length} malformed op(s); see ${OUTBOX_QUARANTINE_KEY}`,
+      );
       saveOutbox(normalized);
     }
 

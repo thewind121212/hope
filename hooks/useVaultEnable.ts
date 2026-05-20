@@ -215,10 +215,11 @@ export function useVaultEnable(options?: { deletePlaintextCloudAfterEnable?: boo
         console.warn('Failed to delete existing encrypted records from server');
       }
 
-      // Clear any stale outbox entries from previous vault attempts
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('vault-sync-outbox');
-      }
+      // NOTE: Previously we cleared `vault-sync-outbox` here to drop ops
+      // from a prior failed vault attempt. That also discarded legitimate
+      // pending ops from the current session. We now leave the outbox alone:
+      // addToOutbox below appends, and the upcoming syncPush will fail/retry
+      // any genuinely stale entries instead of silently losing user edits.
 
       // Phase 5: Queue all encrypted records for sync
       

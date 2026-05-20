@@ -209,6 +209,9 @@ export function useSyncEngine(): UseSyncEngineReturn {
     if (!canSync()) return [];
     if (syncInProgressRef.current) return [];
 
+    // Snapshot the vault key so a concurrent lock() doesn't null it mid-pull.
+    const vaultKeySnapshot = vaultKey;
+
     syncInProgressRef.current = true;
     setState(prev => ({ ...prev, isSyncing: true, error: null }));
 
@@ -248,30 +251,47 @@ export function useSyncEngine(): UseSyncEngineReturn {
            );
 
            // ALSO save directly to encrypted storage for checksum
-           // This ensures local encrypted storage matches server after pull
+           // This ensures local encrypted storage matches server after pull.
+           // Server ciphertext is base64 of [12-byte iv][ciphertext][16-byte tag];
+           // split it before saving so subsequent local decrypt has real iv/tag.
            console.log('[e2e-sync] Pull: saving ciphertext to encrypted storage...');
+           const cryptoMod = await import('@/lib/crypto');
            for (const r of filteredRecords) {
-             saveEncryptedRecord({
-               recordId: r.recordId,
-               recordType: r.recordType,
-               ciphertext: r.ciphertext,
-               iv: '',
-               tag: '',
-               version: r.version,
-               deleted: r.deleted,
-               createdAt: r.updatedAt,
-               updatedAt: r.updatedAt,
-             });
+             const ciphertextStr = r.ciphertext as string;
+             if (!ciphertextStr) continue;
+             try {
+               const combined = cryptoMod.base64ToArray(ciphertextStr);
+               if (combined.length < 12 + 16) {
+                 console.warn('[e2e-sync] Pull: ciphertext too short, skipping', r.recordId);
+                 continue;
+               }
+               const iv = combined.slice(0, 12);
+               const tag = combined.slice(-16);
+               const ciphertext = combined.slice(12, -16);
+               saveEncryptedRecord({
+                 recordId: r.recordId,
+                 recordType: r.recordType,
+                 ciphertext: cryptoMod.arrayToBase64(ciphertext),
+                 iv: cryptoMod.arrayToBase64(iv),
+                 tag: cryptoMod.arrayToBase64(tag),
+                 version: r.version,
+                 deleted: r.deleted,
+                 createdAt: r.updatedAt,
+                 updatedAt: r.updatedAt,
+               });
+             } catch (err) {
+               console.warn('[e2e-sync] Pull: failed to split ciphertext', r.recordId, err);
+             }
            }
            console.log(`[e2e-sync] Pull: saved ${filteredRecords.length} records to encrypted storage`);
 
            let appliedCount = 0;
 
-           if (vaultKey) {
+           if (vaultKeySnapshot) {
               try {
                 const { decryptAndApplyPulledE2eRecords } = await import('@/lib/decrypt-and-apply');
                 console.log('[e2e-sync] Pull: decrypting records...');
-                const result = await decryptAndApplyPulledE2eRecords(vaultKey);
+                const result = await decryptAndApplyPulledE2eRecords(vaultKeySnapshot);
                 appliedCount = result.applied;
                 console.log(`[e2e-sync] Pull: applied ${appliedCount} records`);
                 if (appliedCount > 0) {
@@ -349,8 +369,9 @@ export function useSyncEngine(): UseSyncEngineReturn {
       }
 
       if (result.success && result.synced > 0) {
-        // Update local sync versions for plaintext mode (has results)
-        if (result.results) {
+        // Update local _syncVersion from server response. Works for both
+        // plaintext and E2E push since both now surface `results`.
+        if (result.results && result.results.length > 0) {
           updateLocalSyncVersions(result.results);
         }
         toast.success('Synced to cloud');
@@ -385,44 +406,68 @@ export function useSyncEngine(): UseSyncEngineReturn {
    }, [canSync, syncMode, setLastSyncAt, refreshPendingCount]);
 
   // === APPLY PULLED RECORDS ===
+  // Merge server records into local state with per-record version compare.
+  // - Server record wins ONLY if its version is newer than local _syncVersion.
+  // - Local-only records (not in pull batch) are preserved.
+  // - Deleted records remove the matching local entry.
+  // Prevents stale server data from clobbering fresh local edits.
   const applyPulledRecords = useCallback((records: PlaintextRecord[]) => {
-    const bookmarks: Bookmark[] = [];
-    const spaces: Space[] = [];
-    const pinnedViews: PinnedView[] = [];
+    const existingBookmarks = getBookmarks();
+    const existingSpaces = getSpaces();
+    const existingPinnedViews = getPinnedViews();
+
+    const bookmarksById = new Map(existingBookmarks.map(b => [b.id, b]));
+    const spacesById = new Map(existingSpaces.map(s => [s.id, s]));
+    const viewsById = new Map(existingPinnedViews.map(v => [v.id, v]));
 
     for (const record of records) {
-      if (record.deleted) continue;
-
       const r = record as PlaintextRecord;
-      switch (r.recordType) {
-        case 'bookmark':
-          bookmarks.push({
-            ...(r.data as Bookmark),
-            _syncVersion: r.version,
-            updatedAt: r.updatedAt,
-          });
-          break;
-        case 'space':
-          spaces.push({
-            ...(r.data as Space),
-            _syncVersion: r.version,
-            updatedAt: r.updatedAt,
-          });
-          break;
-        case 'pinned-view':
-          pinnedViews.push({
-            ...(r.data as PinnedView),
-            _syncVersion: r.version,
-            updatedAt: r.updatedAt,
-          });
-          break;
+      const localBookmark = bookmarksById.get(r.recordId);
+      const localSpace = spacesById.get(r.recordId);
+      const localView = viewsById.get(r.recordId);
+
+      if (r.recordType === 'bookmark') {
+        const localVersion = localBookmark?._syncVersion ?? 0;
+        if (r.deleted) {
+          if (localVersion <= r.version) bookmarksById.delete(r.recordId);
+          continue;
+        }
+        if (localVersion > r.version) continue;
+        bookmarksById.set(r.recordId, {
+          ...(r.data as Bookmark),
+          _syncVersion: r.version,
+          updatedAt: r.updatedAt,
+        });
+      } else if (r.recordType === 'space') {
+        const localVersion = localSpace?._syncVersion ?? 0;
+        if (r.deleted) {
+          if (localVersion <= r.version) spacesById.delete(r.recordId);
+          continue;
+        }
+        if (localVersion > r.version) continue;
+        spacesById.set(r.recordId, {
+          ...(r.data as Space),
+          _syncVersion: r.version,
+          updatedAt: r.updatedAt,
+        });
+      } else if (r.recordType === 'pinned-view') {
+        const localVersion = localView?._syncVersion ?? 0;
+        if (r.deleted) {
+          if (localVersion <= r.version) viewsById.delete(r.recordId);
+          continue;
+        }
+        if (localVersion > r.version) continue;
+        viewsById.set(r.recordId, {
+          ...(r.data as PinnedView),
+          _syncVersion: r.version,
+          updatedAt: r.updatedAt,
+        });
       }
     }
 
-    // Always save to localStorage (even if empty - this means server is empty)
-    setBookmarks(bookmarks);
-    setSpaces(spaces);
-    savePinnedViews(pinnedViews);
+    setBookmarks(Array.from(bookmarksById.values()));
+    setSpaces(Array.from(spacesById.values()));
+    savePinnedViews(Array.from(viewsById.values()));
 
     // Invalidate caches after writing pulled records to localStorage
     // This ensures that subsequent reads will fetch fresh data instead of serving stale cache

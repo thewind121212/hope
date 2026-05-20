@@ -131,32 +131,52 @@ export async function pushPlaintext(
     const result = await response.json();
 
     if (response.status === 409) {
-      // Conflicts - remove successful operations, keep conflicts for retry
-      const conflictIds = new Set(result.conflicts.map((c: SyncConflict) => c.recordId));
-      const successfulIds = batch
-        .filter(op => !conflictIds.has(op.recordId))
+      // Conflicts - remove only operations the server reports as applied.
+      // Do NOT assume non-conflict ops succeeded; on 409 the server may
+      // reject the whole batch. Only ops listed in `result.results` are
+      // confirmed applied; everything else stays in outbox for retry.
+      const conflicts: SyncConflict[] = Array.isArray(result?.conflicts)
+        ? result.conflicts
+        : [];
+      const appliedIds = new Set<string>(
+        Array.isArray(result?.results)
+          ? result.results.map((r: { recordId: string }) => r.recordId)
+          : [],
+      );
+
+      const successfulOpIds = batch
+        .filter(op => appliedIds.has(op.recordId))
         .map(op => op.id);
-      removeFromOutbox(successfulIds);
+      removeFromOutbox(successfulOpIds);
+
+      // Bump retries for conflicting ops so dead loops surface
+      const conflictRecordIds = new Set(conflicts.map(c => c.recordId));
+      const refreshed = loadOutbox().map(op =>
+        conflictRecordIds.has(op.recordId)
+          ? { ...op, retries: op.retries + 1 }
+          : op,
+      );
+      saveOutbox(refreshed);
 
       return {
         success: false,
-        synced: successfulIds.length,
-        conflicts: result.conflicts,
+        synced: successfulOpIds.length,
+        conflicts,
         errors: [],
         results: result.results,
       };
     }
 
     if (!response.ok) {
-      // Increment retry count for failed operations
-      const updatedOutbox = outbox.map(op => {
-        if (batch.some(b => b.id === op.id)) {
-          return { ...op, retries: op.retries + 1 };
-        }
-        return op;
-      });
-      saveOutbox(updatedOutbox);
-      
+      // Increment retry count for failed operations. Re-read outbox so a
+      // concurrent tab's queued ops aren't overwritten by stale snapshot.
+      const batchIds = new Set(batch.map(b => b.id));
+      const fresh = loadOutbox();
+      const updated = fresh.map(op =>
+        batchIds.has(op.id) ? { ...op, retries: op.retries + 1 } : op,
+      );
+      saveOutbox(updated);
+
       return {
         success: false,
         synced: 0,
